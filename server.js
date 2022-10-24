@@ -38,8 +38,10 @@ app.use('/', express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/', require('./routes/root'));
-app.use('/register', require('./routes/register'));
-app.use('/auth', require('./routes/auth'));
+app.use('/register', require('./routes/registerRoute'));
+app.use('/auth', require('./routes/authRoute'));
+app.use('/refresh', require('./routes/refreshRoute'));
+app.use('/logout', require('./routes/logoutRoute'));
 
 app.all('*', (req, res) => {
   res.status(404);
