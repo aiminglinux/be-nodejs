@@ -16,13 +16,13 @@ const handleLogin = async (req, res) => {
       { username: foundUser.username },
       process.env.ACCESS_TOKEN_SECRET,
       {
-        expiresIn: '1m',
+        expiresIn: '10s',
       }
     );
     const refreshToken = jwt.sign(
       { username: foundUser.username },
       process.env.REFRESS_TOKEN_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '1m' }
     );
     // Saving refresh token to current user
     foundUser.refreshToken = refreshToken;
@@ -35,7 +35,7 @@ const handleLogin = async (req, res) => {
     await foundUser.save();
     res.json({ ...foundUser.toObject({ getter: true }), accessToken });
   } else {
-    return res.sendStatus(401);
+    return res.status(401).json({ message: 'Email or password is invalid' });
   }
 };
 
