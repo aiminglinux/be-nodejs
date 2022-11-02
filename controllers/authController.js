@@ -8,7 +8,7 @@ const handleLogin = async (req, res) => {
     $or: [{ username }, { email }],
   }).exec();
   if (!foundUser) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.status(401).json({ message: 'Account does not existed' });
   }
   const match = await bycrypt.compare(password, foundUser.password);
   if (match) {
@@ -16,13 +16,13 @@ const handleLogin = async (req, res) => {
       { username: foundUser.username },
       process.env.ACCESS_TOKEN_SECRET,
       {
-        expiresIn: '10s',
+        expiresIn: '15m',
       }
     );
     const refreshToken = jwt.sign(
       { username: foundUser.username },
       process.env.REFRESS_TOKEN_SECRET,
-      { expiresIn: '1m' }
+      { expiresIn: '1d' }
     );
     // Saving refresh token to current user
     foundUser.refreshToken = refreshToken;

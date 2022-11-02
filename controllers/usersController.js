@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const cloudiary = require('../configs/cloudinary');
+const cloudinary = require('../configs/cloudinary');
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const getUsers = async (req, res) => {
@@ -22,21 +22,21 @@ const getUser = async (req, res) => {
 const updateUser = async (req, res) => {
   const id = req.params.id;
   const user = await User.findOne({ _id: id }).exec();
-  console.log(user);
+
   if (!user)
     return res
       .status(204)
       .json({ message: `User with ID ${id} was not found` });
 
+  // Upload new avatar
   if (req.body.picture?.publicId !== process.env.CLOUDINARY_DEFAULT_PUBLIC_ID) {
-    const { url, public_id: publicId } = await uploadToCloudinary(
+    await cloudinary.uploader.destroy(user.picture.publicId);
+    const uploadResponse = await uploadToCloudinary(
       req.body.picture?.url,
-      'Profiles'
+      'pictures'
     );
-  }
-
-  if (user.picture?.publicId !== process.env.CLOUDINARY_DEFAULT_PUBLIC_ID) {
-    cloudiary.uploader.destroy(user.picture.publicId);
+    const { url, public_id: publicId } = uploadResponse;
+    req.body.picture = { url, publicId };
   }
 
   const updatedUser = await User.findOneAndUpdate(

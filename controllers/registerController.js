@@ -23,7 +23,7 @@ const handleNewUser = async (req, res) => {
     const hashedPwd = await bcrypt.hash(password, 10);
 
     if (picture) {
-      const uploadedResponse = await uploadToCloudinary(picture, 'Profiles');
+      const uploadedResponse = await uploadToCloudinary(picture, 'pictures');
       url = uploadedResponse.url;
       publicId = uploadedResponse.public_id;
     }
