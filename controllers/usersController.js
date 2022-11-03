@@ -30,13 +30,13 @@ const updateUser = async (req, res) => {
 
   // Upload new avatar
   if (req.body.picture?.publicId !== process.env.CLOUDINARY_DEFAULT_PUBLIC_ID) {
-    await cloudinary.uploader.destroy(user.picture.publicId);
     const uploadResponse = await uploadToCloudinary(
       req.body.picture?.url,
       'pictures'
     );
     const { url, public_id: publicId } = uploadResponse;
     req.body.picture = { url, publicId };
+    await cloudinary.uploader.destroy(user.picture.publicId);
   }
 
   const updatedUser = await User.findOneAndUpdate(
