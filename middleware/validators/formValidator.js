@@ -12,7 +12,7 @@ exports.registerValidator = [
     .bail(),
   body('email')
     .trim()
-    .normalizeEmail()
+    .normalizeEmail({ gmail_remove_dots: false })
     .not()
     .isEmpty()
     .withMessage('Email is required')
@@ -47,7 +47,7 @@ exports.authValidator = [
       .isEmail()
       .withMessage('Please input a valid email')
       .bail()
-      .normalizeEmail(),
+      .normalizeEmail({ gmail_remove_dots: false }),
     body('username').exists().withMessage('Username is required').bail(),
   ]),
 

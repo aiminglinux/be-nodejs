@@ -43,6 +43,8 @@ app.use('/auth', require('./routes/authRoute'));
 app.use('/refresh', require('./routes/refreshRoute'));
 app.use('/logout', require('./routes/logoutRoute'));
 app.use('/users', require('./routes/usersRoute'));
+app.use('/posts', require('./routes/postsRoute'));
+app.use('/comments', require('./routes/commentsRoute'));
 
 app.all('*', (req, res) => {
   res.status(404);

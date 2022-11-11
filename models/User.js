@@ -11,12 +11,15 @@ const UserSchema = new Schema(
       url: String,
       publicId: String,
     },
-    bio: { type: String, default: '' },
+    website: { type: String, default: '' },
     location: { type: String, default: '' },
-    education: { type: String, default: '' },
-    work: { type: String, default: '' },
-    availableFor: { type: String, default: '' },
+    bio: { type: String, default: '' },
+    learning: { type: String, default: '' },
     skills: { type: String, default: '' },
+    workingOn: { type: String, default: '' },
+    availableFor: { type: String, default: '' },
+    workingAt: { type: String, default: '' },
+    education: { type: String, default: '' },
     posts: [{ type: mongoose.Types.ObjectId, ref: 'Post' }],
     comments: [{ type: mongoose.Types.ObjectId, ref: 'Comment' }],
     followedTags: [{ type: mongoose.Types.ObjectId, ref: 'Tag' }],
@@ -25,7 +28,7 @@ const UserSchema = new Schema(
     bookmarks: [{ type: mongoose.Types.ObjectId, ref: 'Post' }],
     refreshToken: { type: String, default: '' },
   },
-  { timestamps: { createdAt: true, updatedAt: false } }
+  { timestamps: { createdAt: true, updatedAt: true } }
 );
 
 module.exports = mongoose.model('User', UserSchema);

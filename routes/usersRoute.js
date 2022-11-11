@@ -1,16 +1,32 @@
 const express = require('express');
-const route = express.Router();
+const router = express.Router();
 
 const verifyJWT = require('../middleware/verifyJWT');
-
 const {
   getUser,
-  getUsers,
+  getUserList,
   updateUser,
+  deleteUser,
+  getUserDashboard,
+  handleFollow,
 } = require('../controllers/usersController');
+const {
+  getNotifications,
+  getUnreadNotifications,
+} = require('../controllers/notificationsController');
 
-route.get('/', getUser);
-route.get('/:username', getUser);
-route.patch('/:id', verifyJWT, updateUser);
+router.route('/').get(getUserList);
 
-module.exports = route;
+router.route('/:id').patch(verifyJWT, updateUser).delete(verifyJWT, deleteUser);
+
+router.route('/:username').get(getUser);
+
+router.route('/dashboard/:username').get(getUser);
+
+router.route('/:previewedId/:action').patch(verifyJWT, handleFollow);
+
+router.route('/:userId/notifications').get(getNotifications);
+
+router.route('/:userId/notifications/unread').get(getUnreadNotifications);
+
+module.exports = router;
