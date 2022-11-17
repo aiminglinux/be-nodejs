@@ -2,6 +2,7 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const Tag = require('../models/Tag');
 const Comment = require('../models/Comment');
+const slugtify = require('slugify');
 
 const cloudinary = require('../configs/cloudinary');
 const { uploadToCloudinary } = require('../utils/cloudinary');
@@ -18,6 +19,7 @@ const {
 
 const createPost = async (req, res) => {
   const { title, file, body, tags, authorUsername } = req.body;
+  const slug = slugtify(title, { lower: true, strict: true });
 
   const { url, public_id: publicId } = await uploadToCloudinary(file, 'posts');
   const author = await User.findOne({ username: authorUsername }).exec();
@@ -32,6 +34,7 @@ const createPost = async (req, res) => {
     image: { url, publicId },
     body,
     author: author._id,
+    slug,
   });
 
   author.followers.map((followerId) => {
@@ -50,13 +53,17 @@ const createPost = async (req, res) => {
 };
 
 const getPost = async (req, res) => {
-  const author = await User.findOne({ username: req.params.username }).exec();
+  console.log('test');
+
+  const { username, postUrl } = req.params;
+
+  const author = await User.findOne({ username }).exec();
   const authorId = await author?.toObject({ getters: true }).id;
-  const { postTitle, postId } = getPostParams(req.params.postUrl);
+  const { postTitle, postId } = getPostParams(postUrl);
 
   const foundPost = await Post.findOne({
     author: authorId,
-    title: postTitle,
+    // title: postTitle,
     _id: postId,
   })
     .populate('author')
@@ -69,11 +76,13 @@ const getPost = async (req, res) => {
 
 const getPosts = async (req, res) => {
   const { userId } = req.params;
+  // const { _id: id } = await User.findOne({ username: userId }).exec();
 
   const posts = await Post.find(userId ? { bookmarks: userId } : {})
     .sort({ createdAt: -1 })
     .populate('author')
     .populate('tags');
+  // console.log(posts);
   if (!posts) res.status(204).json('No posts found');
 
   res.status(200).json(posts.map((post) => post.toObject({ getters: true })));

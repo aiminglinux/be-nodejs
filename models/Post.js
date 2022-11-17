@@ -9,6 +9,7 @@ const PostSchema = new Schema(
       publicId: { type: String, required: true },
     },
     body: { type: String, required: true },
+    slug: { type: String, required: true },
     likes: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
     unicorns: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
     bookmarks: [{ type: mongoose.Types.ObjectId, ref: 'User' }],

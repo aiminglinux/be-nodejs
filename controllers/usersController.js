@@ -3,21 +3,22 @@ const cloudinary = require('../configs/cloudinary');
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
 // Get All Users
-const getUserList = async (req, res) => {
-  const userList = await User.find({})
+const getUsers = async (req, res) => {
+  const users = await User.find({})
     .populate({
       path: 'posts',
       populate: ['author', 'tags'],
     })
     .sort({ followers: -1 });
-  res.json(userList.map((user) => user.toObject({ getters: true })));
+  res.json(users.map((user) => user.toObject({ getters: true })));
 };
 
 // Get Specific User
 const getUser = async (req, res) => {
-  const username = req.body.username;
+  const username = req.params.username;
 
-  if (!username) res.status(400).json({ message: 'Username is required' });
+  if (!username)
+    return res.status(400).json({ message: 'Username is required' });
 
   const user = await User.findOne({ username })
     .populate({
@@ -127,7 +128,7 @@ const handleFollow = async (req, res) => {
 module.exports = {
   getUser,
   getUserDashboard,
-  getUserList,
+  getUsers,
   updateUser,
   deleteUser,
   handleFollow,

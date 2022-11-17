@@ -28,7 +28,7 @@ const UserSchema = new Schema(
     bookmarks: [{ type: mongoose.Types.ObjectId, ref: 'Post' }],
     refreshToken: { type: String, default: '' },
   },
-  { timestamps: { createdAt: true, updatedAt: true } }
+  { timestamps: { createdAt: true, updatedAt: false } }
 );
 
 module.exports = mongoose.model('User', UserSchema);

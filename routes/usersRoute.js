@@ -4,7 +4,7 @@ const router = express.Router();
 const verifyJWT = require('../middleware/verifyJWT');
 const {
   getUser,
-  getUserList,
+  getUsers,
   updateUser,
   deleteUser,
   getUserDashboard,
@@ -15,13 +15,13 @@ const {
   getUnreadNotifications,
 } = require('../controllers/notificationsController');
 
-router.route('/').get(getUserList);
+router.route('/').get(getUsers);
 
 router.route('/:id').patch(verifyJWT, updateUser).delete(verifyJWT, deleteUser);
 
 router.route('/:username').get(getUser);
 
-router.route('/dashboard/:username').get(getUser);
+router.route('/dashboard/:username').get(getUserDashboard);
 
 router.route('/:previewedId/:action').patch(verifyJWT, handleFollow);
 

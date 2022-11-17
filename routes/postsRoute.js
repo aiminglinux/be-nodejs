@@ -16,11 +16,9 @@ router.route('/').get(getPosts).post(verifyJWT, createPost);
 
 router.route('/bookmarked/:userId').get(getPosts);
 
-router
-  .route('/:username:/:postId')
-  .get(getPost)
-  .patch(updatePost)
-  .delete(deletePost);
+router.route('/:username/:postUrl').get(getPost);
+// .patch(verifyJWT, updatePost)
+// .delete(verifyJWT, deletePost);
 
 router.route('./:username/:postURL/:action').patch(verifyJWT, postReaction);
 
