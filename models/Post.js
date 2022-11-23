@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const slug = require('mongoose-slug-generator');
+mongoose.plugin(slug);
 const Schema = mongoose.Schema;
 
 const PostSchema = new Schema(
@@ -9,7 +11,7 @@ const PostSchema = new Schema(
       publicId: { type: String, required: true },
     },
     body: { type: String, required: true },
-    slug: { type: String, required: true },
+    slug: { type: String, slug: 'title', unique: true },
     likes: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
     unicorns: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
     bookmarks: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
