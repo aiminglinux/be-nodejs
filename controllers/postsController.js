@@ -19,7 +19,6 @@ const {
 
 const createPost = async (req, res) => {
   const { title, file, body, tags, authorUsername } = req.body;
-  // const slug = slugtify(title, { lower: true, strict: true });
 
   const { url, public_id: publicId } = await uploadToCloudinary(file, 'posts');
   const author = await User.findOne({ username: authorUsername }).exec();
@@ -86,29 +85,33 @@ const getPosts = async (req, res) => {
 };
 
 const updatePost = async (req, res) => {
-  const authorId = await User.findOne({ username: req.params.username }).exec();
-  const { postTitle, postId } = getPostParams(req.params.postUrl);
+  const { username, postSlug } = req.params;
+  // console.log(req.body);
 
-  const { url, public_id: publicId } = await uploadToCloudinary(
-    req.body.image.url,
-    'Posts'
-  );
+  const authorId = await User.findOne({ username }).exec();
 
-  await cloudinary.uploader.destroy(req.body.image.publicId);
+  const post = await Post.findOne({
+    author: authorId,
+    slug: postSlug,
+  })
+    .populate('author')
+    .populate('tags');
 
-  req.body.image = { url, publicId };
+  if (!post) res.status(204).json({ message: 'Post not found on DB' });
+
+  if (req.body.file) {
+    const { url, public_id: publicId } = await uploadToCloudinary(
+      req.body.file,
+      'posts'
+    );
+    await cloudinary.uploader.destroy(req.body.image.publicId);
+    req.body.image = { url, publicId };
+  }
+
   const formattedTags = req.body.tags
     .trim()
     .split(',')
     .map((w) => w.trim().replace(/ /g, '-'));
-
-  const post = await Post.findOne({
-    author: authorId,
-    title: postTitle,
-    _id: postId,
-  })
-    .populate('author')
-    .populate('tags');
 
   Object.keys(req.body).map((key) => {
     if (key !== 'tags') post[key] = req.body[key];
@@ -118,7 +121,7 @@ const updatePost = async (req, res) => {
 
   await post.save();
 
-  res.status(200).json(post.toObject({ getters: true }));
+  res.status(200).json({ message: 'Post updated successful' });
 };
 
 const deletePostsByUserId = async (user) => {

@@ -19,7 +19,7 @@ router.route('/bookmarked/:userId').get(getPosts);
 router
   .route('/:username/:postSlug')
   .get(getPost)
-  // .patch(verifyJWT, updatePost)
+  .patch(verifyJWT, updatePost)
   .delete(verifyJWT, deletePost);
 
 router.route('./:username/:postURL/:action').patch(verifyJWT, postReaction);
