@@ -8,7 +8,9 @@ const handleRefreshToken = async (req, res) => {
 
   const refreshToken = cookies.jwt;
 
-  const foundUser = await User.findOne({ refreshToken }).exec();
+  const foundUser = await User.findOne({ refreshToken })
+    .select('+refreshToken')
+    .exec();
 
   if (!foundUser) return res.status(403).json({ message: 'Forbidden' });
 

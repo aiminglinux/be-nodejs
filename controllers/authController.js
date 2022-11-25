@@ -6,7 +6,9 @@ const handleLogin = async (req, res) => {
   const { email, username, password } = req.body;
   const foundUser = await User.findOne({
     $or: [{ username }, { email }],
-  }).exec();
+  })
+    .select(['+email', '+password', '+refreshToken'])
+    .exec();
   if (!foundUser) {
     return res.status(401).json({ message: 'Account does not existed' });
   }

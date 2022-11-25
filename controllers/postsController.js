@@ -54,7 +54,9 @@ const createPost = async (req, res) => {
 const getPost = async (req, res) => {
   const { username, postSlug } = req.params;
 
-  const author = await User.findOne({ username }).exec();
+  const author = await User.findOne({ username })
+    .select(['-password', '-refreshToken', '-email'])
+    .exec();
   const authorId = await author?.toObject({ getters: true }).id;
 
   const foundPost = await Post.findOne({
@@ -162,7 +164,6 @@ const deletePostsByUserId = async (user) => {
 const deletePost = async (req, res) => {
   const { username, postSlug } = req.params;
   const author = await User.findOne({ username }).exec();
-  // const { postTitle, postId } = getPostParams(req.params.postUrl);
 
   const foundPost = await Post.findOne({
     author: author._id,
@@ -170,7 +171,11 @@ const deletePost = async (req, res) => {
   })
     .populate('tags')
     .exec();
-  console.log(foundPost);
+  console.log(foundPost._id);
+
+  author.posts.pull(foundPost._id);
+
+  await author.save();
 
   if (!foundPost) return res.status(204).json({ message: 'Post not found' });
   await cloudinary.uploader.destroy(foundPost.image.publicId);

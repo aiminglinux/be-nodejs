@@ -5,8 +5,8 @@ const UserSchema = new Schema(
   {
     name: { type: String, required: true },
     username: { type: String, required: true },
-    email: { type: String, required: true },
-    password: { type: String, required: true },
+    email: { type: String, select: false, required: true },
+    password: { type: String, select: false, required: true },
     picture: {
       url: String,
       publicId: String,
@@ -26,7 +26,7 @@ const UserSchema = new Schema(
     followers: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
     following: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
     bookmarks: [{ type: mongoose.Types.ObjectId, ref: 'Post' }],
-    refreshToken: { type: String, default: '' },
+    refreshToken: { type: String, select: false, default: '' },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );
