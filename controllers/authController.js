@@ -2,8 +2,13 @@ const bycrypt = require('bcrypt');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-const handleLogin = async (req, res) => {
+// @desc Login to system
+// @route POST /auth
+// @access Private
+
+const login = async (req, res) => {
   const { email, username, password } = req.body;
+
   const foundUser = await User.findOne({
     $or: [{ username }, { email }],
   })
@@ -15,10 +20,10 @@ const handleLogin = async (req, res) => {
   const match = await bycrypt.compare(password, foundUser.password);
   if (match) {
     const accessToken = jwt.sign(
-      { username: foundUser.username },
+      { username: foundUser.username, id: foundUser._id },
       process.env.ACCESS_TOKEN_SECRET,
       {
-        expiresIn: '15m',
+        expiresIn: '1d',
       }
     );
     const refreshToken = jwt.sign(
@@ -41,4 +46,4 @@ const handleLogin = async (req, res) => {
   }
 };
 
-module.exports = { handleLogin };
+module.exports = { login };

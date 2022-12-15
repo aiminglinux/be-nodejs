@@ -1,5 +1,5 @@
 const express = require('express');
-const { handleNewUser } = require('../controllers/registerController');
+const { register } = require('../controllers/registerController');
 const router = express.Router();
 
 // @desc Register account
@@ -8,6 +8,6 @@ const router = express.Router();
 
 const { registerValidator } = require('../middleware/validators/formValidator');
 
-router.post('/', registerValidator, handleNewUser);
+router.post('/', registerValidator, register);
 
 module.exports = router;

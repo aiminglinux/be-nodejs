@@ -5,23 +5,20 @@ const verifyJWT = require('../middleware/verifyJWT');
 
 const {
   createPost,
-  getPost,
-  getPosts,
+  getPostById,
+  getAllPosts,
   updatePost,
   deletePost,
-  postReaction,
 } = require('../controllers/postsController');
 
-router.route('/').get(getPosts).post(verifyJWT, createPost);
+router.route('/').get(getAllPosts).post(verifyJWT, createPost);
 
-router.route('/bookmarked/:userId').get(getPosts);
+router.route('/bookmarked/:userId').get(getAllPosts);
 
 router
-  .route('/:username/:postSlug')
-  .get(getPost)
-  .patch(verifyJWT, updatePost)
-  .delete(verifyJWT, deletePost);
-
-router.route('./:username/:postURL/:action').patch(verifyJWT, postReaction);
+  .route('/:postId')
+  .get(getPostById)
+  .delete(verifyJWT, deletePost)
+  .patch(verifyJWT, updatePost);
 
 module.exports = router;

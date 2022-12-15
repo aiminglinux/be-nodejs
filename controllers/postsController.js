@@ -2,12 +2,9 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const Tag = require('../models/Tag');
 const Comment = require('../models/Comment');
-const slugtify = require('slugify');
 
 const cloudinary = require('../configs/cloudinary');
 const { uploadToCloudinary } = require('../utils/cloudinary');
-
-const { unCapitalizeFirstLetter, getPostParams } = require('../helpers/string');
 
 const { createTags, updateTags, deleteTags } = require('./tagsController');
 const {
@@ -16,90 +13,170 @@ const {
   postNotification,
   removePostNotification,
 } = require('./notificationsController');
+const { default: mongoose, Mongoose } = require('mongoose');
+
+// @desc Get all posts
+// @route GET /posts
+// @access Public
+
+const getAllPosts = async (req, res) => {
+  let posts;
+  try {
+    posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .populate('author')
+      .populate('tags');
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({
+      message:
+        'Internal server error - Could not fetch posts, please try again',
+    });
+  }
+  if (!posts?.length === 0)
+    return res.status(400).json({ message: 'Posts data is empty' });
+  res
+    .status(200)
+    .json({ posts: posts.map((post) => post.toObject({ getters: true })) });
+};
+
+// @desc Get single post by postId
+// @route GET /posts/:postId
+// @access Public
+
+const getPostById = async (req, res) => {
+  const { postId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(postId))
+    return res.status(400).json({ message: 'Invalid post ID' });
+
+  let post;
+
+  try {
+    post = await Post.findById(postId)
+      .populate('author')
+      .populate('comments')
+      .populate('tags');
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({
+      message: 'Internal server error - Could not fetch post, please try again',
+    });
+  }
+
+  if (!post) return res.status(204);
+
+  res.status(200).json({ post: post.toObject({ getters: true }) });
+};
+
+// @desc Get all posts by user ID
+// @route /user/:userId
+// @access Public
+
+const getPostsByUserId = async (req, res) => {
+  const { userId } = req.params;
+  let posts;
+
+  try {
+    posts = await Post.find({ author: userId }).populate('author').exec();
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: 'Fetch posts failed, please try again' });
+  }
+
+  if (!posts || posts.length === 0) return res.status(204);
+
+  res
+    .status(200)
+    .json({ posts: posts.map((post) => post.toObject({ getters: true })) });
+};
+
+// @desc Create post
+// @route POST /posts
+// @access Private
 
 const createPost = async (req, res) => {
-  const { title, file, body, tags, authorUsername } = req.body;
+  const { title, file, body, tags, author } = req.body;
+
+  if (!Mongoose.Types.ObjectId(author))
+    return res.status(400).json({ message: `Invalid ID for author ${author}` });
 
   const { url, public_id: publicId } = await uploadToCloudinary(file, 'posts');
-  const author = await User.findOne({ username: authorUsername }).exec();
-
-  const formattedTags = tags
-    .trim()
-    .split(',')
-    .map((w) => w.trim().replace(/ /g, '-'));
 
   const createdPost = await Post.create({
     title,
     image: { url, publicId },
     body,
     author: author._id,
-    // slug,
   });
 
-  author.followers.map((followerId) => {
-    (async () => {
-      await postNotification(author._id, createdPost._id, followerId);
-    })();
-  });
+  await createTags(JSON.parse(tags), createdPost);
 
-  await createTags(formattedTags, createdPost);
+  let user;
 
-  author.posts.push(createdPost._id);
+  try {
+    user = await User.findById(author).exec();
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Internal server error: Could not create new post' });
+  }
 
-  await author.save();
+  if (!user)
+    return res
+      .status(404)
+      .json({ message: 'Could not found user for requested author' });
 
-  res.status(200).json(createdPost.toObject({ getters: true }));
+  if (user.followers.length > 0) {
+    user.followers.map((follower) => {
+      async () => {
+        await postNotification(user._id, createdPost._id, follower);
+      };
+    });
+  }
+
+  user.posts.push(createdPost);
+
+  try {
+    await Promise.all([createdPost.save(), user.save()]);
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Failed to save new post, please try again' });
+  }
+  res.status(201).json(createdPost.toObject({ getters: true }));
 };
 
-const getPost = async (req, res) => {
-  const { username, postSlug } = req.params;
-
-  const author = await User.findOne({ username })
-    .select(['-password', '-refreshToken', '-email'])
-    .exec();
-  const authorId = await author?.toObject({ getters: true }).id;
-
-  const foundPost = await Post.findOne({
-    author: authorId,
-    slug: postSlug,
-  })
-    .populate('author')
-    .populate('comments')
-    .populate('tags')
-    .exec();
-
-  if (!foundPost) return res.status(404).json({ message: 'No post found' });
-  res.status(200).json(foundPost.toObject({ getters: true }));
-};
-
-const getPosts = async (req, res) => {
-  const { userId } = req.params;
-  // const { _id: id } = await User.findOne({ username: userId }).exec();
-
-  const posts = await Post.find(userId ? { bookmarks: userId } : {})
-    .sort({ createdAt: -1 })
-    .populate('author')
-    .populate('tags');
-  // console.log(posts);
-  if (!posts) res.status(204).json('No posts found');
-
-  res.status(200).json(posts.map((post) => post.toObject({ getters: true })));
-};
+// @desc Update post
+// @route PATCH /posts/:postId
+// @access Private
 
 const updatePost = async (req, res) => {
-  const { username, postSlug } = req.params;
-  // console.log(req.body);
+  const { postId } = req.params;
 
-  const authorId = await User.findOne({ username }).exec();
+  if (!Mongoose.Types.ObjectId(postId))
+    return res.status(400).json({ message: 'Invalid post ID' });
 
-  const post = await Post.findOne({
-    author: authorId,
-    slug: postSlug,
-  })
-    .populate('author')
-    .populate('tags');
+  let post;
 
-  if (!post) res.status(204).json({ message: 'Post not found on DB' });
+  try {
+    post = await Post.findById(postId).populate('author').populate('tags');
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: `Could not update post with ID: ${postId}` });
+  }
+
+  if (!post) res.status(204).json({ message: 'Post could not be found' });
+
+  if (post.author.toString() !== req.body.author)
+    return res
+      .status(401)
+      .json({ message: 'You do not have permission to perform this action' });
 
   if (req.body.file) {
     const { url, public_id: publicId } = await uploadToCloudinary(
@@ -110,23 +187,32 @@ const updatePost = async (req, res) => {
     req.body.image = { url, publicId };
   }
 
-  const formattedTags = req.body.tags
-    .trim()
-    .split(',')
-    .map((w) => w.trim().replace(/ /g, '-'));
-
   Object.keys(req.body).map((key) => {
     if (key !== 'tags') post[key] = req.body[key];
   });
 
-  await updateTags(formattedTags, post);
+  try {
+    await Promise.all([
+      updateTags(JSON.parse(req.body.tags), post),
+      post.save(),
+    ]);
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Failed to update post, please try again' });
+  }
 
-  await post.save();
-
-  res.status(200).json({ message: 'Post updated successful' });
+  res.status(200).json({
+    post: post.toObject({ getters: true }),
+  });
 };
 
-const deletePostsByUserId = async (user) => {
+// @desc Delete user data
+// @route DELETE /users/:userId
+// @access Private
+
+const deleteUserData = async (user) => {
   const { _id: userId } = user;
 
   user.comments.forEach((commentId) => {
@@ -161,86 +247,75 @@ const deletePostsByUserId = async (user) => {
   await Comment.deleteMany({ author: userId });
 };
 
+// @desc Delete post
+// @route DELETE /posts/:postId
+// @access Private
+
 const deletePost = async (req, res) => {
-  const { username, postSlug } = req.params;
-  const author = await User.findOne({ username }).exec();
+  const { postId } = req.params;
 
-  const foundPost = await Post.findOne({
-    author: author._id,
-    slug: postSlug,
-  })
-    .populate('tags')
-    .exec();
-  console.log(foundPost._id);
+  if (!Mongoose.Types.ObjectId(postId))
+    return res.status(400).json({ message: `Invalid ID for ${postId}` });
 
-  author.posts.pull(foundPost._id);
+  let post;
 
-  await author.save();
+  try {
+    post = await Post.findById(postId)
+      .populate('tags')
+      .populate('author')
+      .exec();
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Could not delete requested post, please try again' });
+  }
 
-  if (!foundPost) return res.status(204).json({ message: 'Post not found' });
-  await cloudinary.uploader.destroy(foundPost.image.publicId);
+  if (!post) return res.status(204);
 
-  // const comments = await Comment.find({ parentPost: postId }).populate({
-  //   path: 'author',
-  //   populate: 'followers',
-  // });
+  if (post.author.id !== req.body.author)
+    return res
+      .status(401)
+      .json({ message: 'You do not have permission to perform this action' });
 
-  // comments.forEach(({ author }) =>
-  //   (async () => {
-  //     author.comments.forEach((comment) => author.comments.pull(comment));
-  //   })()
-  // );
-  // author.posts.pull(postId);
-  // await author.save();
+  await cloudinary.uploader.destroy(post.image.publicId);
 
-  // await Comment.deleteMany({ parentPost: postId });
+  const comments = await Comment.find({ parentPost: postId }).populate({
+    path: 'author',
+    populate: 'followers',
+  });
 
-  // await deleteTags(
-  //   foundPost.tags.map(({ name }) => name),
-  //   foundPost,
-  //   true
-  // );
+  comments.forEach(({ author }) =>
+    (async () => {
+      author.comments.forEach((comment) => author.comments.pull(comment));
+    })()
+  );
 
-  // removePostNotification(author._id, foundPost._id, author.followers);
+  post.author.posts.pull(post);
 
-  await Post.deleteOne({ _id: foundPost._id });
+  await Promise.all([
+    post.author.save(),
+    Comment.deleteMany({ parentPost: postId }),
+    deleteTags(
+      post.tags.map(({ name }) => name),
+      post,
+      true
+    ),
+  ]);
+
+  removePostNotification(post.author, post, post.author.followers);
+
+  await Post.deleteOne(post);
 
   res.status(200).json({ message: 'Post deleted' });
 };
 
-const postReaction = async (req, res) => {
-  const { userId } = req.body;
-  const { action, postUrl } = req.params;
-  const { postTitle, postId } = getPostParams(postUrl);
-  const isUndoing = action.includes('remove');
-  const actionKey = isUndoing
-    ? unCapitalizeFirstLetter(action.replace('remove', '')) + 's'
-    : action + 's';
-
-  const author = await User.findOne({ username: req.params.username }).exec();
-  const authorId = await author.toObject({ getters: true }).id;
-
-  const updatedPost = await Post.findOneAndUpdate(
-    { author: authorId, title: postTitle, _id: postId },
-    isUndoing
-      ? { $pull: { [actionKey]: userId } }
-      : { $addToSet: { [actionKey]: userId } },
-    { new: true, timestamps: false }
-  );
-
-  if (isUndoing)
-    await removeLikeNotification(userId, updatedPost._id, authorId);
-  else await likeNotification(userId, updatedPost._id, authorId);
-
-  res.status(200).json(updatedPost.toObject({ getters: true }));
-};
-
 module.exports = {
   createPost,
-  getPosts,
-  getPost,
+  getAllPosts,
+  getPostById,
+  getPostsByUserId,
   updatePost,
   deletePost,
-  deletePostsByUserId,
-  postReaction,
+  deleteUserData,
 };

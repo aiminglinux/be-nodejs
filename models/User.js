@@ -24,7 +24,7 @@ const UserSchema = new Schema(
     comments: [{ type: mongoose.Types.ObjectId, ref: 'Comment' }],
     followedTags: [{ type: mongoose.Types.ObjectId, ref: 'Tag' }],
     followers: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
-    following: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
+    followings: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
     bookmarks: [{ type: mongoose.Types.ObjectId, ref: 'Post' }],
     refreshToken: { type: String, select: false, default: '' },
   },
