@@ -2,6 +2,7 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const Tag = require('../models/Tag');
 const Comment = require('../models/Comment');
+const fs = require('fs');
 
 const cloudinary = require('../configs/cloudinary');
 const { uploadToCloudinary } = require('../utils/cloudinary');
@@ -29,12 +30,10 @@ const getAllPosts = async (req, res) => {
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({
-      message:
-        'Internal server error - Could not fetch posts, please try again',
+      message: 'Could not fetch posts, please try again',
     });
   }
-  if (!posts?.length === 0)
-    return res.status(400).json({ message: 'Posts data is empty' });
+  if (!posts) return res.status(400).json({ message: 'Posts data is empty' });
   res
     .status(200)
     .json({ posts: posts.map((post) => post.toObject({ getters: true })) });
@@ -97,57 +96,66 @@ const getPostsByUserId = async (req, res) => {
 // @access Private
 
 const createPost = async (req, res) => {
-  const { title, file, body, tags, author } = req.body;
+  const { title, body, tags } = req.body;
 
-  if (!Mongoose.Types.ObjectId(author))
-    return res.status(400).json({ message: `Invalid ID for author ${author}` });
+  // if (req.file) {
+  //   const { url, public_id: publicId } = await uploadToCloudinary(
+  //     req.file.path,
+  //     'posts'
+  //   );
+  //   fs.unlinkSync(req.file.path);
+  //   req.body.image = { url, publicId };
+  // }
 
-  const { url, public_id: publicId } = await uploadToCloudinary(file, 'posts');
+  const formattedTags = tags
+    .trim()
+    .split(',')
+    .map((w) => w.trim().replace(/ /g, '-'));
+  console.log(formattedTags);
+  // const createdPost = await Post.create({
+  //   title,
+  //   image: { url, publicId },
+  //   body,
+  //   author: author._id,
+  // });
 
-  const createdPost = await Post.create({
-    title,
-    image: { url, publicId },
-    body,
-    author: author._id,
-  });
+  // await createTags(JSON.parse(tags), createdPost);
 
-  await createTags(JSON.parse(tags), createdPost);
+  // let user;
 
-  let user;
+  // try {
+  //   user = await User.findById(author).exec();
+  // } catch (error) {
+  //   console.error(error.message);
+  //   return res
+  //     .status(500)
+  //     .json({ message: 'Internal server error: Could not create new post' });
+  // }
 
-  try {
-    user = await User.findById(author).exec();
-  } catch (error) {
-    console.error(error.message);
-    return res
-      .status(500)
-      .json({ message: 'Internal server error: Could not create new post' });
-  }
+  // if (!user)
+  //   return res
+  //     .status(404)
+  //     .json({ message: 'Could not found user for requested author' });
 
-  if (!user)
-    return res
-      .status(404)
-      .json({ message: 'Could not found user for requested author' });
+  // if (user.followers.length > 0) {
+  //   user.followers.map((follower) => {
+  //     async () => {
+  //       await postNotification(user._id, createdPost._id, follower);
+  //     };
+  //   });
+  // }
 
-  if (user.followers.length > 0) {
-    user.followers.map((follower) => {
-      async () => {
-        await postNotification(user._id, createdPost._id, follower);
-      };
-    });
-  }
+  // user.posts.push(createdPost);
 
-  user.posts.push(createdPost);
-
-  try {
-    await Promise.all([createdPost.save(), user.save()]);
-  } catch (error) {
-    console.error(error.message);
-    return res
-      .status(500)
-      .json({ message: 'Failed to save new post, please try again' });
-  }
-  res.status(201).json(createdPost.toObject({ getters: true }));
+  // try {
+  //   await Promise.all([createdPost.save(), user.save()]);
+  // } catch (error) {
+  //   console.error(error.message);
+  //   return res
+  //     .status(500)
+  //     .json({ message: 'Failed to save new post, please try again' });
+  // }
+  // res.status(201).json(createdPost.toObject({ getters: true }));
 };
 
 // @desc Update post

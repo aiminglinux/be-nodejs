@@ -38,26 +38,27 @@ const getUserById = async (req, res) => {
   const id = req.params.id;
 
   if (!mongoose.isValidObjectId(id))
-    return res.status(400).json({ message: 'Invalid User ID' });
+    return res.status(400).json({ message: 'Requested User ID is invalid' });
+
+  let user;
 
   try {
-    const user = await User.findById(id)
+    user = await User.findById(id)
       .populate({
         path: 'posts',
         populate: ['author', 'tags'],
       })
       .exec();
-
-    if (!user)
-      return res.status(404).json({ message: `User ${username} not found` });
-
-    res.json({ user: user.toObject({ getters: true }) });
   } catch (error) {
     console.error(error.message);
     return res
       .status(500)
       .json({ message: 'Internal server error: Failed to fetch user' });
   }
+  if (!user)
+    return res.status(404).json({ message: `User ID ${id} not found` });
+
+  res.json({ user: user.toObject({ getters: true }) });
 };
 
 // @desc Get all users
@@ -65,15 +66,10 @@ const getUserById = async (req, res) => {
 // @access Private
 
 const getUserDashboard = async (req, res) => {
-  const id = req.params.id;
-
-  if (!mongoose.isValidObjectId(id))
-    return res.status(400).json({ message: 'Invalid User ID' });
-
   let user;
 
   try {
-    user = await User.findById(id)
+    user = await User.findById(req.id)
       .populate({ path: 'posts', options: { sort: { createAt: -1 } } })
       .populate('followings')
       .populate('followers')
@@ -87,12 +83,7 @@ const getUserDashboard = async (req, res) => {
   }
 
   if (!user)
-    return res.status(404).json({ message: `User ${username} not found` });
-
-  if (req.username !== user.username)
-    return res
-      .status(403)
-      .json({ message: 'You are not authorized to view this resource' });
+    return res.status(404).json({ message: `User ID ${req.id} not found` });
 
   res.status(200).json(user.toObject({ getters: true }));
 };
@@ -158,33 +149,25 @@ const updateUser = async (req, res) => {
 // @access Private
 
 const deleteUser = async (req, res) => {
-  const id = req.params.id;
-
-  if (!mongoose.isValidObjectId(id))
-    return res.status(400).json({ message: 'Invalid user ID' });
-
   let user;
 
   try {
-    user = await User.findById(id).exec();
+    user = await User.findById(req.id).exec();
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ message: 'Failed to delete user' });
   }
   if (!user)
-    return res.status(404).json({ message: `User ID ${id} not found` });
-
-  if (req.username !== user.username)
-    return res.status(403).json({ message: 'Invalid credentials' });
+    return res.status(404).json({ message: `User ID ${req.id} not found` });
 
   if (user.picture?.publicId) {
     if (user.picture.publicId !== process.env.CLOUDINARY_DEFAULT_PUBLIC_ID)
       cloudinary.uploader.destroy(user.picture.publicId);
   }
 
-  ['followers', 'following'].forEach((r) => {
+  ['followers', 'followings'].forEach((r) => {
     (async () => {
-      await User.updateMany({ [r]: id }, { $pull: { [r]: id } });
+      await User.updateMany({ [r]: req.id }, { $pull: { [r]: req.id } });
     })();
   });
   // TODO: Delete user posts and comments
@@ -193,7 +176,7 @@ const deleteUser = async (req, res) => {
     console.error(error.message);
     return res.status(500).json({ message: 'Failed to delete user' });
   }
-  const deletedUser = await User.findByIdAndDelete(id);
+  const deletedUser = await User.findByIdAndDelete(req.id);
   res
     .status(200)
     .json({ message: `User ${deletedUser.username} deleted successfully` });

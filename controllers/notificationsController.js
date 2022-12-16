@@ -3,39 +3,11 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 
 const getAllNotifications = async (req, res) => {
-  const id = req.params.id;
-
-  // console.log(id);
-
-  // if (!mongoose.isValidObjectId(id))
-  //   return res.status(400).json({ message: 'Invalid User ID' });
-
-  // let user;
-
-  // try {
-  //   user = await User.findOne({ username: req.username }).exec();
-  // } catch (error) {
-  //   console.error(error.message);
-  //   return res
-  //     .status(500)
-  //     .json({ message: 'Failed to get notifications, please try again' });
-  // }
-
-  // if (!user)
-  //   return res
-  //     .status(500)
-  //     .json({ message: 'Failed to get notifications, please try again' });
-
-  // if (user._id.toString() !== id)
-  //   return res
-  //     .status(400)
-  //     .json({ message: 'You are not authorized to view this resource' });
-
   let notifications;
 
   try {
     // await Notification.updateMany({ receiver: id }, { read: true });
-    notifications = await Notification.find({ receiver: id })
+    notifications = await Notification.find({ receiver: req.id })
       .sort({ createdAt: -1 })
       .populate('receiver', 'username')
       .populate('sender', 'username')
@@ -55,21 +27,29 @@ const getAllNotifications = async (req, res) => {
   });
 };
 
-const getUnreadNotifications = async (req, res, next) => {
-  const { userId } = req.params;
-  if (!userId) return res.status(400).json('User Id required');
+const getUnreadNotifications = async (req, res) => {
+  let unreadNotifications;
 
-  const unreadNotifications = await Notification.find({
-    receiver: userId,
-    read: false,
-  })
-    .sort({ createdAt: -1 })
-    .populate('receiver')
-    .populate('sender')
-    .populate('post')
-    .populate({ path: 'comment', populate: 'body' });
+  try {
+    unreadNotifications = await Notification.find({
+      receiver: req.id,
+      read: false,
+    })
+      .sort({ createdAt: -1 })
+      .populate('receiver', 'username')
+      .populate('sender', 'username')
+      .populate('post', 'title')
+      .populate({ path: 'comment', populate: 'body' });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: 'Failed to fetch unread notifications' });
+  }
 
-  res.json(unreadNotifications);
+  res.status(200).json({
+    unreadNotifications: unreadNotifications.map((unreadNotification) =>
+      unreadNotification.toObject({ getters: true })
+    ),
+  });
 };
 
 const likeNotification = async (senderId, postId, receiverId) => {

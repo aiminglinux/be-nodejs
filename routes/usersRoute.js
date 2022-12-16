@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const verifyJWT = require('../middleware/verifyJWT');
-const isAuthorized = require('../middleware/auth');
+const verifyOwner = require('../middleware/verifyOwner');
+
 const {
   getUserById,
   getAllUsers,
@@ -21,16 +22,20 @@ router.route('/').get(getAllUsers);
 router.route('/:id').get(getUserById);
 
 router.use(verifyJWT);
-router.use(isAuthorized);
 
-router.route('/dash/:id').get(getUserDashboard);
+router.route('/dash/:id').get(verifyOwner, getUserDashboard);
 
-router.route('/:id').patch(updateUser).delete(deleteUser);
+router
+  .route('/:id')
+  .patch(verifyOwner, updateUser)
+  .delete(verifyOwner, deleteUser);
 
-router.route('/:id/notifications').get(getAllNotifications);
+router.route('/:id/notifications').get(verifyOwner, getAllNotifications);
 
-router.route('/:id/notifications/unread').get(getUnreadNotifications);
+router
+  .route('/:id/notifications/unread')
+  .get(verifyOwner, getUnreadNotifications);
 
-router.route('/:action/:followId').patch(handleFollow);
+router.route('/:action/:followId').patch(verifyOwner, handleFollow);
 
 module.exports = router;
