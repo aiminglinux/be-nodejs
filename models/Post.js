@@ -7,8 +7,8 @@ const PostSchema = new Schema(
   {
     title: { type: String, required: true },
     image: {
-      url: { type: String, required: true },
-      publicId: { type: String, required: true },
+      url: { type: String },
+      publicId: { type: String },
     },
     body: { type: String, required: true },
     slug: { type: String, slug: 'title', unique: true },

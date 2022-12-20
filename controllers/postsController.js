@@ -39,6 +39,35 @@ const getAllPosts = async (req, res) => {
     .json({ posts: posts.map((post) => post.toObject({ getters: true })) });
 };
 
+// @desc Get post commments by postId
+// @route GET /posts/:postId/comments
+// @access Public
+
+const getAllCommentsByPostId = async (req, res) => {
+  const { postId } = req.params;
+  console.log(req.params);
+
+  if (!postId || !mongoose.isValidObjectId(postId))
+    return res.status(400).json({ message: 'Invalid provided post ID' });
+
+  let comments;
+  try {
+    comments = await Comment.find({
+      parentPost: req.params.postId,
+    }).exec();
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Could not fetch comments for post' });
+  }
+
+  if (!comments) return res.stutus(204).json();
+  res.status(200).json({
+    comments: comments.map((comment) => comment.toObject({ getters: true })),
+  });
+};
+
 // @desc Get single post by postId
 // @route GET /posts/:postId
 // @access Public
@@ -97,65 +126,68 @@ const getPostsByUserId = async (req, res) => {
 
 const createPost = async (req, res) => {
   const { title, body, tags } = req.body;
+  const author = req.id;
 
-  // if (req.file) {
-  //   const { url, public_id: publicId } = await uploadToCloudinary(
-  //     req.file.path,
-  //     'posts'
-  //   );
-  //   fs.unlinkSync(req.file.path);
-  //   req.body.image = { url, publicId };
-  // }
+  if (req.file) {
+    const { url, public_id: publicId } = await uploadToCloudinary(
+      req.file.path,
+      'posts'
+    );
+    fs.unlinkSync(req.file.path);
+    req.body.image = { url, publicId };
+  }
 
   const formattedTags = tags
-    .trim()
+    ?.trim()
     .split(',')
     .map((w) => w.trim().replace(/ /g, '-'));
+
   console.log(formattedTags);
-  // const createdPost = await Post.create({
-  //   title,
-  //   image: { url, publicId },
-  //   body,
-  //   author: author._id,
-  // });
 
-  // await createTags(JSON.parse(tags), createdPost);
+  const createdPost = await Post.create({
+    title,
+    image: req.body.image,
+    body,
+    author: req.id,
+  });
 
-  // let user;
+  await createTags(formattedTags, createdPost);
 
-  // try {
-  //   user = await User.findById(author).exec();
-  // } catch (error) {
-  //   console.error(error.message);
-  //   return res
-  //     .status(500)
-  //     .json({ message: 'Internal server error: Could not create new post' });
-  // }
+  let user;
 
-  // if (!user)
-  //   return res
-  //     .status(404)
-  //     .json({ message: 'Could not found user for requested author' });
+  try {
+    user = await User.findById(author).exec();
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Internal server error: Could not create new post' });
+  }
 
-  // if (user.followers.length > 0) {
-  //   user.followers.map((follower) => {
-  //     async () => {
-  //       await postNotification(user._id, createdPost._id, follower);
-  //     };
-  //   });
-  // }
+  if (!user)
+    return res
+      .status(404)
+      .json({ message: 'Could not found user for requested author' });
 
-  // user.posts.push(createdPost);
+  if (user.followers.length > 0) {
+    user.followers.map((follower) => {
+      async () => {
+        await postNotification(user._id, createdPost._id, follower);
+      };
+    });
+  }
 
-  // try {
-  //   await Promise.all([createdPost.save(), user.save()]);
-  // } catch (error) {
-  //   console.error(error.message);
-  //   return res
-  //     .status(500)
-  //     .json({ message: 'Failed to save new post, please try again' });
-  // }
-  // res.status(201).json(createdPost.toObject({ getters: true }));
+  user.posts.push(createdPost);
+
+  try {
+    await Promise.all([createdPost.save(), user.save()]);
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Failed to save new post, please try again' });
+  }
+  res.status(201).json(createdPost.toObject({ getters: true }));
 };
 
 // @desc Update post
@@ -163,15 +195,15 @@ const createPost = async (req, res) => {
 // @access Private
 
 const updatePost = async (req, res) => {
-  const { postId } = req.params;
+  const id = req.params.id;
 
-  if (!Mongoose.Types.ObjectId(postId))
+  if (!mongoose.isValidObjectId(id))
     return res.status(400).json({ message: 'Invalid post ID' });
 
   let post;
 
   try {
-    post = await Post.findById(postId).populate('author').populate('tags');
+    post = await Post.findById(id).populate('author').populate('tags');
   } catch (error) {
     console.error(error.message);
     return res
@@ -181,7 +213,7 @@ const updatePost = async (req, res) => {
 
   if (!post) res.status(204).json({ message: 'Post could not be found' });
 
-  if (post.author.toString() !== req.body.author)
+  if (post.author.username !== req.username)
     return res
       .status(401)
       .json({ message: 'You do not have permission to perform this action' });
@@ -191,7 +223,7 @@ const updatePost = async (req, res) => {
       req.body.file,
       'posts'
     );
-    await cloudinary.uploader.destroy(req.body.image.publicId);
+    await cloudinary.uploader.destroy(post.image.publicId);
     req.body.image = { url, publicId };
   }
 
@@ -199,11 +231,15 @@ const updatePost = async (req, res) => {
     if (key !== 'tags') post[key] = req.body[key];
   });
 
+  const formattedTags = req.body.tags
+    ?.trim()
+    .split(',')
+    .map((w) => w.trim().replace(/ /g, '-'));
+
+  console.log(formattedTags);
+
   try {
-    await Promise.all([
-      updateTags(JSON.parse(req.body.tags), post),
-      post.save(),
-    ]);
+    await Promise.all([updateTags(formattedTags, post), post.save()]);
   } catch (error) {
     console.error(error.message);
     return res
@@ -260,18 +296,15 @@ const deleteUserData = async (user) => {
 // @access Private
 
 const deletePost = async (req, res) => {
-  const { postId } = req.params;
+  const id = req.params.id;
 
-  if (!Mongoose.Types.ObjectId(postId))
-    return res.status(400).json({ message: `Invalid ID for ${postId}` });
+  if (!mongoose.isValidObjectId(id))
+    return res.status(400).json({ message: `Invalid ID for ${id}` });
 
   let post;
 
   try {
-    post = await Post.findById(postId)
-      .populate('tags')
-      .populate('author')
-      .exec();
+    post = await Post.findById(id).populate('tags').populate('author').exec();
   } catch (error) {
     console.error(error.message);
     return res
@@ -281,14 +314,16 @@ const deletePost = async (req, res) => {
 
   if (!post) return res.status(204);
 
-  if (post.author.id !== req.body.author)
+  if (post.author.username !== req.username)
     return res
       .status(401)
       .json({ message: 'You do not have permission to perform this action' });
 
-  await cloudinary.uploader.destroy(post.image.publicId);
+  if (post.image) {
+    await cloudinary.uploader.destroy(post.image.publicId);
+  }
 
-  const comments = await Comment.find({ parentPost: postId }).populate({
+  const comments = await Comment.find({ parentPost: id }).populate({
     path: 'author',
     populate: 'followers',
   });
@@ -303,7 +338,7 @@ const deletePost = async (req, res) => {
 
   await Promise.all([
     post.author.save(),
-    Comment.deleteMany({ parentPost: postId }),
+    Comment.deleteMany({ parentPost: id }),
     deleteTags(
       post.tags.map(({ name }) => name),
       post,
@@ -318,12 +353,57 @@ const deletePost = async (req, res) => {
   res.status(200).json({ message: 'Post deleted' });
 };
 
+const postActions = async (req, res) => {
+  const { id, action } = req.params;
+  console.log('Action: ', action.includes('un'));
+  const actions = ['like', 'unlike', 'bookmark', 'unbookmark'];
+
+  if (!actions.includes(action.toLowerCase()))
+    return res.status(400).json({ message: 'Invalid action' });
+
+  if (!mongoose.isValidObjectId(id))
+    return res.status(400).json({ message: 'Invalid Post ID' });
+
+  const actionKey = action.toLowerCase().includes('un')
+    ? action.toLowerCase().replace('un', '') + 's'
+    : action.toLowerCase() + 's';
+
+  console.log('ActionKey: ', actionKey);
+
+  const isUndo = action.toLowerCase().includes('un');
+
+  let post;
+
+  try {
+    post = await Post.findByIdAndUpdate(
+      id,
+      isUndo
+        ? { $pull: { [actionKey]: req.id } }
+        : { $addToSet: { [actionKey]: req.id } },
+      { new: true, timestamps: false }
+    );
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: 'Could not update post reaction' });
+  }
+
+  if (!post) return res.status(204).json();
+
+  isUndo
+    ? await removeLikeNotification(req.id, id, post.author.toString())
+    : await likeNotification(req.id, id, post.author.toString());
+
+  res.status(200).json({ message: `${action} update sucessfully` });
+};
+
 module.exports = {
   createPost,
   getAllPosts,
+  getAllCommentsByPostId,
   getPostById,
   getPostsByUserId,
   updatePost,
   deletePost,
   deleteUserData,
+  postActions,
 };

@@ -4,18 +4,20 @@ const router = express.Router();
 const verifyJWT = require('../middleware/verifyJWT');
 
 const {
-  postComment,
+  createComment,
   getCommentsByPost,
   deleteComment,
   updateComment,
   commentReaction,
+  getCommentByCommentId,
 } = require('../controllers/commentsController');
 
-router.route('/').post(verifyJWT, postComment);
-router.route('/:postId').get(getCommentsByPost);
+// router.route('/').post(verifyJWT, postComment);
+router.route('/:postId').post(verifyJWT, createComment);
 
 router
-  .route('/:commentId')
+  .route('/:id')
+  .get(getCommentByCommentId)
   .delete(verifyJWT, deleteComment)
   .patch(verifyJWT, updateComment);
 

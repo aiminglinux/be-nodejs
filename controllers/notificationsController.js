@@ -53,22 +53,40 @@ const getUnreadNotifications = async (req, res) => {
 };
 
 const likeNotification = async (senderId, postId, receiverId) => {
-  if (senderId !== receiverId)
-    await Notification.create({
+  try {
+    if (senderId !== receiverId) {
+      const createLikeNotification = new Notification({
+        type: 'like',
+        sender: senderId,
+        receiver: receiverId,
+        post: postId,
+      });
+      await createLikeNotification.save();
+      return;
+    }
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Could not create like notification' });
+  }
+};
+
+const removeLikeNotification = async (senderId, postId, receiverId) => {
+  try {
+    await Notification.findOneAndDelete({
       type: 'like',
       sender: senderId,
       receiver: receiverId,
       post: postId,
     });
-};
-
-const removeLikeNotification = async (senderId, postId, receiverId) => {
-  await Notification.findOneAndDelete({
-    type: 'like',
-    sender: senderId,
-    receiver: receiverId,
-    post: postId,
-  });
+    return;
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Could not remove like notification' });
+  }
 };
 
 const commentNotification = async (senderId, postId, commentId, receiverId) => {

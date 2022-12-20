@@ -23,22 +23,26 @@ const storage = multer.diskStorage({
   },
 });
 
+const fileFilter = (req, file, cb) => {
+  const isValid = !!MIME_TYPE_MAP[file.mimetype];
+  let error = isValid
+    ? null
+    : new Error(
+        'Unsupported file format, supported file formats: PNG/JPEG/JPG/GIF/WEBP!'
+      );
+  cb(error, isValid);
+};
+
 const uploadMiddleware = (req, res, next) => {
   const singleUpload = multer({
+    storage: storage,
+    fileFilter,
     limits: 500000,
-    storage,
-    fileFilter: (req, file, cb) => {
-      const isValid = !!MIME_TYPE_MAP[file.mimetype];
-      let error = isValid
-        ? null
-        : new Error(
-            'Unsupported file format, supported file formats: PNG/JPEG/JPG/GIF/WEBP!'
-          );
-      cb(error, isValid);
-    },
   }).single('file');
 
   singleUpload(req, res, function (err) {
+    console.log('you are here');
+
     if (err instanceof multer.MulterError) {
       res.status(500);
       next(err);

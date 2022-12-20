@@ -36,6 +36,11 @@ const deleteTags = async (tags, post, isPostDeletion) => {
   });
 };
 
+const updateTags = async (tags, post) => {
+  await createTags(tags, post);
+  await deleteTags(tags, post, false);
+};
+
 const getTags = async (req, res) => {
   const tags = await Tag.find({}).sort({ posts: -1 });
 
@@ -64,11 +69,6 @@ const getTagByName = async (req, res) => {
     .exec();
 
   res.status(200).json(tag.toObject({ getters: true }));
-};
-
-const updateTags = async (tags, post) => {
-  await createTags(tags, post);
-  await deleteTags(tags, post, false);
 };
 
 const handleFollow = async (req, res) => {
