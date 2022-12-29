@@ -5,7 +5,6 @@ const verifyJWT = require('../middleware/verifyJWT');
 
 const {
   createComment,
-  getCommentsByPost,
   deleteComment,
   updateComment,
   commentReaction,
@@ -14,6 +13,7 @@ const {
 
 // router.route('/').post(verifyJWT, postComment);
 router.route('/:postId').post(verifyJWT, createComment);
+router.route('/:postId/:commentId').post(verifyJWT, createComment);
 
 router
   .route('/:id')
