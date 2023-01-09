@@ -188,78 +188,54 @@ const deleteUser = async (req, res) => {
 
 const handleFollow = async (req, res) => {
   const { action, followId } = req.params;
-  const isUndoing = action.includes('un');
 
   if (!mongoose.isValidObjectId(followId))
     return res.status(400).json({ message: 'Invalid follower ID' });
 
-  let user;
-
-  try {
-    user = await User.findOne({ username: req.username });
-  } catch (error) {
-    console.error(error.message);
-    return res
-      .status(500)
-      .json({ message: 'Could not perform action, please try again.' });
-  }
-
-  if (!user)
-    return res
-      .status(404)
-      .json({ message: `Could not found user ${req.username}` });
-
-  if (user._id.toString() === followId)
+  if (followId === req.id)
     return res
       .status(400)
-      .json({ message: 'You can not follow or unfollow yourself' });
+      .json({ message: 'You cannot follow or unfollow yourself' });
 
-  if (
-    !isUndoing &&
-    user.followings.length > 0 &&
-    user.followings.includes(followId)
-  )
-    return res
-      .status(409)
-      .json({ message: `You are already followed user ID ${followId}` });
+  const isFollowed = await User.find({
+    _id: followId,
+    followers: req.id,
+  }).countDocuments();
 
-  if (
-    (isUndoing && user.followings.length === 0) ||
-    (isUndoing &&
-      user.followings.length > 0 &&
-      !user.followings.includes(followId))
-  )
-    return res.status(400).json({
-      message: `You are not follow or already unfollow user ID ${followId}`,
-    });
+  // return console.log(isFollowed);
 
   try {
-    await User.findOneAndUpdate(
-      { username: req.username },
-      { [isUndoing ? '$pull' : '$addToSet']: { followings: followId } },
-      { timestamps: false }
-    );
-
-    await User.findByIdAndUpdate(
-      followId,
-      { [isUndoing ? '$pull' : '$addToSet']: { followers: user._id } },
-      { new: true, timestamps: false }
-    );
-
-    if (isUndoing) await removeFollowNotification(user._id, followId);
-    if (!isUndoing) await followNotification(user._id, followId);
-
-    res.status(202).json({
-      message:
-        [isUndoing ? 'Unfollow' : 'Follow'] +
-        ` user ID ${followId} successfully`,
-    });
+    await Promise.all([
+      User.findByIdAndUpdate(
+        req.id,
+        {
+          [isFollowed > 0 ? '$pull' : '$addToSet']: { followings: followId },
+        },
+        { timestamps: false }
+      ),
+      User.findByIdAndUpdate(
+        followId,
+        { [isFollowed > 0 ? '$pull' : '$addToSet']: { followers: req.id } },
+        { new: true, timestamps: false }
+      ),
+    ]);
+    isFollowed > 0
+      ? await removeFollowNotification(req.id, followId)
+      : await followNotification(req.id, followId);
   } catch (error) {
     console.error(error.message);
     return res
       .status(500)
       .json({ message: 'Failed to perform action, please try again' });
   }
+
+  console.log(isFollowed > 0);
+
+  res.status(200).json({
+    message:
+      [isFollowed > 0 ? 'Unfollow' : 'Follow'] +
+      ` user ID ${followId} successfully`,
+  });
 };
 
 module.exports = {

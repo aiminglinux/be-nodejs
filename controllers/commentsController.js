@@ -5,6 +5,8 @@ const { unCapitalizeFirstLetter } = require('../helpers/string');
 const {
   commentNotification,
   removeCommentNotification,
+  commentLikeNotification,
+  removeCommentLikeNotification,
 } = require('./notificationsController');
 const { default: mongoose } = require('mongoose');
 
@@ -50,22 +52,22 @@ const createComment = async (req, res) => {
   let post, user, existedComment;
 
   let data = {
-    postId,
+    parentPost: postId,
     body: req.body.text,
     author: req.id,
   };
 
   if (commentId) {
-    data.rootComment = commentId;
-    existedComment = await Comment.findById(commentId);
+    data.parentComment = commentId;
   }
 
   // return console.log('Data: ', data);
 
   try {
-    [post, user] = await Promise.all([
-      Post.findById(postId),
+    [post, user, existedComment] = await Promise.all([
+      Post.findById(postId).populate('author'),
       User.findById(req.id),
+      Comment.findById(commentId),
     ]);
   } catch (error) {
     console.error(error.message);
@@ -74,20 +76,19 @@ const createComment = async (req, res) => {
 
   if (!post || !user) return res.status(204).json();
 
+  if (existedComment?.parentComment) {
+    data.parents = [...existedComment.parents, commentId];
+  }
+
   let newComment = new Comment(data);
 
   post.comments.push(newComment._id);
   user.comments.push(newComment._id);
 
-  if (existedComment?.rootComment) {
-    existedComment.replies.push(newComment);
-  }
-
   try {
     await Promise.all([
       user.save(),
       post.save({ timestamps: false }),
-      existedComment?.save(),
       newComment.save(),
     ]);
   } catch (error) {
@@ -95,7 +96,7 @@ const createComment = async (req, res) => {
     return res.status(500).json({ message: 'Could not create comment' });
   }
 
-  commentNotification(req.id, postId, newComment._id, post.author.toString());
+  commentNotification(req.id, postId, newComment.id, post.author.id);
 
   res.status(200).json(newComment.toObject({ getters: true }));
 };
@@ -156,7 +157,7 @@ const deleteComment = async (req, res) => {
   try {
     comment = await Comment.findById(id)
       .populate('author')
-      .populate('postId')
+      .populate('parentPost')
       .exec();
   } catch (error) {
     console.error(error.message);
@@ -170,13 +171,19 @@ const deleteComment = async (req, res) => {
       .status(401)
       .json({ message: 'You are not authorized to delete this comment' });
 
-  // comment.postId.comments.pull(comment.id);
-  // comment.author.comments.pull(comment.id);
+  // console.log('Before del comment: ', comment.postId.comments);
+
+  comment.parentPost.comments.pull(comment.id);
+  comment.author.comments.pull(comment.id);
+
+  // console.log('After del comment: ', comment.postId.comments);
 
   let replies;
 
   try {
-    replies = await Comment.find({ rootComment: comment.id }).exec();
+    replies = await Comment.find({ parents: comment.id })
+      .populate('author')
+      .exec();
   } catch (error) {
     console.error(error.message);
     res
@@ -185,20 +192,33 @@ const deleteComment = async (req, res) => {
   }
 
   if (replies) {
-    return console.log(replies);
-    // replies.forEach((reply) => {
-    //   console.log(reply.id);
-    //   comment.parentPost.comments.pull(reply.id);
-    //   comment.author.comments.pull(reply.id);
-    //   async () => await Comment.deleteMany({ parentComment: comment.id });
-    // });
+    replies.forEach((reply) => {
+      reply.author.comments.pull(reply.id);
+      comment.parentPost.comments.pull(reply.id);
+      async () =>
+        Promise.all([
+          reply.author.save(),
+          removeCommentNotification(
+            reply.author.id,
+            comment.parentPost.id,
+            reply.id,
+            comment.parentPost.author.toString()
+          ),
+        ]);
+    });
+    await Comment.deleteMany({ parents: comment.id });
   }
-  return;
   try {
     await Promise.all([
-      comment.postId.save(),
+      comment.parentPost.save(),
       comment.author.save(),
-      Comment.deleteOne({ id: comment.id }),
+      Comment.deleteOne({ _id: comment.id }),
+      removeCommentNotification(
+        comment.author.id,
+        comment.parentPost.id,
+        comment.id,
+        comment.parentPost.author.toString()
+      ),
     ]);
   } catch (error) {
     console.error(error.message);
@@ -206,57 +226,38 @@ const deleteComment = async (req, res) => {
   }
 
   res.status(200).json({ message: 'Comment deleted' });
-  // const comment = await Comment.findByIdAndDelete(commentIdToDelete);
-
-  // const post = await Post.findById(comment.parentPost).exec();
-  // post.comments.pull(commentIdToDelete);
-
-  // const user = await User.findById(comment.author).exec();
-  // user.comments.pull(commentIdToDelete);
-
-  // const replies = await Comment.find({ parentComment: comment._id });
-
-  // if (replies) {
-  //   replies.forEach((reply) => {
-  //     (async () => {
-  //       post.comments.pull(reply._id);
-
-  //       const user = await User.findById(reply.author).exec();
-  //       user.comments.pull(reply._id);
-  //     })();
-  //   });
-  //   await Comment.deleteMany({ parentComment: comment._id });
-  // }
-
-  // await post.save({ timestamps: false });
-  // await user.save();
-
-  // await removeCommentNotification(
-  //   comment.author,
-  //   comment.parentPost,
-  //   comment._id,
-  //   post.author
-  // );
-
-  // res.status(200).json(comment.toObject({ getters: true }));
 };
 
 const commentReaction = async (req, res) => {
-  const { userId } = req.body;
-  const { commentId, action } = req.params;
-  const isUndoing = action.includes('remove');
-  const actionKey = isUndoing
-    ? unCapitalizeFirstLetter(action.replace('remove', '')) + 's'
-    : action + 's';
+  const id = req.id;
+  const { commentId } = req.params;
+
+  if (!mongoose.isValidObjectId(commentId))
+    return res.status(400).json({ message: 'A valid comment ID is required' });
+
+  let comment;
+
+  try {
+    comment = await Comment.findById(commentId).populate('author');
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: 'Could not update comment reaction' });
+  }
+
+  if (!comment) return res.status(204).json();
+
+  const isLiked = comment.likes.includes(id);
 
   const updatedComment = await Comment.findOneAndUpdate(
     { _id: commentId },
-    isUndoing
-      ? { $pull: { [actionKey]: userId } }
-      : { $addToSet: { [actionKey]: userId } },
+    isLiked ? { $pull: { likes: id } } : { $addToSet: { likes: id } },
     { new: true }
   );
-
+  isLiked
+    ? await removeCommentLikeNotification(id, commentId, comment.author.id)
+    : await commentLikeNotification(id, commentId, comment.author.id);
   res.status(200).json(updatedComment?.toObject({ getters: true }));
 };
 

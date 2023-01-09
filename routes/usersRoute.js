@@ -36,6 +36,6 @@ router
   .route('/:id/notifications/unread')
   .get(verifyOwner, getUnreadNotifications);
 
-router.route('/:action/:followId').patch(verifyOwner, handleFollow);
+router.route('/:action/:followId').patch(handleFollow);
 
 module.exports = router;

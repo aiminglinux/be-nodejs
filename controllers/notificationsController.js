@@ -1,4 +1,4 @@
-const { default: mongoose } = require('mongoose');
+const { default: mongoose, Types } = require('mongoose');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 
@@ -106,6 +106,7 @@ const removeCommentNotification = async (
   commentId,
   receiverId
 ) => {
+  console.log('Del: ', senderId);
   await Notification.findOneAndDelete({
     type: 'comment',
     sender: senderId,
@@ -148,7 +149,33 @@ const removePostNotification = async (senderId, postId, receiverId) => {
   });
 };
 
+const commentLikeNotification = async (senderId, commentId, receiverId) => {
+  if (senderId !== receiverId) {
+    await Notification.create({
+      type: 'like',
+      sender: senderId,
+      receiver: receiverId,
+      comment: commentId,
+    });
+  }
+};
+
+const removeCommentLikeNotification = async (
+  senderId,
+  commentId,
+  receiverId
+) => {
+  await Notification.findOneAndDelete({
+    type: 'like',
+    sender: senderId,
+    comment: commentId,
+    receiver: receiverId,
+  });
+};
+
 module.exports = {
+  commentLikeNotification,
+  removeCommentLikeNotification,
   getAllNotifications,
   getUnreadNotifications,
   likeNotification,

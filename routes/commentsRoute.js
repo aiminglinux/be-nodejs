@@ -21,6 +21,6 @@ router
   .delete(verifyJWT, deleteComment)
   .patch(verifyJWT, updateComment);
 
-router.route('/:commendId/:action').patch(verifyJWT, commentReaction);
+router.route('/:commentId/:action').patch(verifyJWT, commentReaction);
 
 module.exports = router;
