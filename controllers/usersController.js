@@ -197,29 +197,29 @@ const handleFollow = async (req, res) => {
       .status(400)
       .json({ message: 'You cannot follow or unfollow yourself' });
 
-  const isFollowed = await User.find({
+  const found = await User.find({
     _id: followId,
     followers: req.id,
   }).countDocuments();
 
-  // return console.log(isFollowed);
+  // return console.log(found);
 
   try {
     await Promise.all([
       User.findByIdAndUpdate(
         req.id,
         {
-          [isFollowed > 0 ? '$pull' : '$addToSet']: { followings: followId },
+          [found > 0 ? '$pull' : '$addToSet']: { followings: followId },
         },
         { timestamps: false }
       ),
       User.findByIdAndUpdate(
         followId,
-        { [isFollowed > 0 ? '$pull' : '$addToSet']: { followers: req.id } },
+        { [found > 0 ? '$pull' : '$addToSet']: { followers: req.id } },
         { new: true, timestamps: false }
       ),
     ]);
-    isFollowed > 0
+    found > 0
       ? await removeFollowNotification(req.id, followId)
       : await followNotification(req.id, followId);
   } catch (error) {
@@ -229,12 +229,11 @@ const handleFollow = async (req, res) => {
       .json({ message: 'Failed to perform action, please try again' });
   }
 
-  console.log(isFollowed > 0);
+  console.log(found > 0);
 
   res.status(200).json({
     message:
-      [isFollowed > 0 ? 'Unfollow' : 'Follow'] +
-      ` user ID ${followId} successfully`,
+      [found > 0 ? 'Unfollow' : 'Follow'] + ` user ID ${followId} successfully`,
   });
 };
 
