@@ -356,7 +356,7 @@ const deletePost = async (req, res) => {
 const postActions = async (req, res) => {
   const { id, action } = req.params;
   console.log('Action: ', action.includes('un'));
-  const actions = ['like', 'unlike', 'bookmark', 'unbookmark'];
+  const actions = ['like', 'bookmark'];
 
   if (!actions.includes(action.toLowerCase()))
     return res.status(400).json({ message: 'Invalid action' });
@@ -364,20 +364,21 @@ const postActions = async (req, res) => {
   if (!mongoose.isValidObjectId(id))
     return res.status(400).json({ message: 'Invalid Post ID' });
 
-  const actionKey = action.toLowerCase().includes('un')
-    ? action.toLowerCase().replace('un', '') + 's'
-    : action.toLowerCase() + 's';
+  const actionKey = action.toLowerCase() + 's';
 
   console.log('ActionKey: ', actionKey);
 
-  const isUndo = action.toLowerCase().includes('un');
+  const found = await Post.find({
+    _id: id,
+    actionKey: req.id,
+  });
 
   let post;
 
   try {
     post = await Post.findByIdAndUpdate(
       id,
-      isUndo
+      found > 0
         ? { $pull: { [actionKey]: req.id } }
         : { $addToSet: { [actionKey]: req.id } },
       { new: true, timestamps: false }
@@ -389,7 +390,7 @@ const postActions = async (req, res) => {
 
   if (!post) return res.status(204).json();
 
-  isUndo
+  actionKey === 'likes' && found > 0
     ? await removeLikeNotification(req.id, id, post.author.toString())
     : await likeNotification(req.id, id, post.author.toString());
 
