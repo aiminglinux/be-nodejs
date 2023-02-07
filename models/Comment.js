@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const Populate = require('../utils/autopopulate');
+
 const CommentSchema = new Schema(
   {
     body: { type: String, required: true },
@@ -12,9 +14,14 @@ const CommentSchema = new Schema(
     },
     author: { type: mongoose.Types.ObjectId, required: true, ref: 'User' },
     likes: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
-    parents: [{ type: mongoose.Types.ObjectId, ref: 'Comment' }],
+    replies: [{ type: mongoose.Types.ObjectId, ref: 'Comment' }],
   },
   { timestamps: true }
 );
+
+CommentSchema.pre('find', Populate('replies'))
+  .pre('findOne', Populate('replies'))
+  .pre('findOne', Populate('author'))
+  .pre('find', Populate('author'));
 
 module.exports = mongoose.model('Comment', CommentSchema);

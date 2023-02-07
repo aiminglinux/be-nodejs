@@ -49,7 +49,7 @@ const createComment = async (req, res) => {
   )
     return res.status(400).json({ message: 'Invalid provided ID' });
 
-  let post, user, existedComment;
+  let post, user;
 
   let data = {
     parentPost: postId,
@@ -61,13 +61,10 @@ const createComment = async (req, res) => {
     data.parentComment = commentId;
   }
 
-  // return console.log('Data: ', data);
-
   try {
-    [post, user, existedComment] = await Promise.all([
+    [post, user] = await Promise.all([
       Post.findById(postId).populate('author'),
       User.findById(req.id),
-      Comment.findById(commentId),
     ]);
   } catch (error) {
     console.error(error.message);
@@ -76,20 +73,17 @@ const createComment = async (req, res) => {
 
   if (!post || !user) return res.status(204).json();
 
-  if (existedComment?.parentComment) {
-    data.parents = [...existedComment.parents, commentId];
-  }
-
   let newComment = new Comment(data);
 
-  post.comments.push(newComment._id);
-  user.comments.push(newComment._id);
+  post.comments.push(newComment);
+  user.comments.push(newComment);
 
   try {
     await Promise.all([
       user.save(),
       post.save({ timestamps: false }),
       newComment.save(),
+      Comment.updateOne({ _id: commentId }, { $push: { replies: newComment } }),
     ]);
   } catch (error) {
     console.error(error.message);
@@ -171,12 +165,8 @@ const deleteComment = async (req, res) => {
       .status(401)
       .json({ message: 'You are not authorized to delete this comment' });
 
-  // console.log('Before del comment: ', comment.postId.comments);
-
   comment.parentPost.comments.pull(comment.id);
   comment.author.comments.pull(comment.id);
-
-  // console.log('After del comment: ', comment.postId.comments);
 
   let replies;
 

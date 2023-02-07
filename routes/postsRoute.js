@@ -16,15 +16,13 @@ const {
   postActions,
 } = require('../controllers/postsController');
 
-router
-  .route('/')
-  .get(getAllPosts)
-  .post([verifyJWT, uploadMiddleware], createPost);
+router.route('/').get(getAllPosts);
+// .post([verifyJWT, uploadMiddleware], createPost);
 
 router.route('/bookmarked/:userId').get(getAllPosts);
 
 router
-  .route('/:id')
+  .route('/:postId')
   .get(getPostById)
   .delete(verifyJWT, deletePost)
   .patch(verifyJWT, updatePost);

@@ -58,7 +58,7 @@ const getUserById = async (req, res) => {
   if (!user)
     return res.status(404).json({ message: `User ID ${id} not found` });
 
-  res.json({ user: user.toObject({ getters: true }) });
+  res.json(user.toObject({ getters: true }));
 };
 
 // @desc Get all users

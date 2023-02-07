@@ -34,9 +34,7 @@ const getAllPosts = async (req, res) => {
     });
   }
   if (!posts) return res.status(400).json({ message: 'Posts data is empty' });
-  res
-    .status(200)
-    .json({ posts: posts.map((post) => post.toObject({ getters: true })) });
+  res.status(200).json(posts.map((post) => post.toObject({ getters: true })));
 };
 
 // @desc Get post commments by postId
@@ -63,9 +61,9 @@ const getAllCommentsByPostId = async (req, res) => {
   }
 
   if (!comments) return res.stutus(204).json();
-  res.status(200).json({
-    comments: comments.map((comment) => comment.toObject({ getters: true })),
-  });
+  res
+    .status(200)
+    .json(comments.map((comment) => comment.toObject({ getters: true })));
 };
 
 // @desc Get single post by postId
@@ -74,6 +72,8 @@ const getAllCommentsByPostId = async (req, res) => {
 
 const getPostById = async (req, res) => {
   const { postId } = req.params;
+
+  console.log(postId);
 
   if (!mongoose.Types.ObjectId.isValid(postId))
     return res.status(400).json({ message: 'Invalid post ID' });
@@ -94,7 +94,7 @@ const getPostById = async (req, res) => {
 
   if (!post) return res.status(204);
 
-  res.status(200).json({ post: post.toObject({ getters: true }) });
+  res.status(200).json(post.toObject({ getters: true }));
 };
 
 // @desc Get all posts by user ID
