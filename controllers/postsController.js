@@ -353,48 +353,52 @@ const deletePost = async (req, res) => {
   res.status(200).json({ message: 'Post deleted' });
 };
 
-const postActions = async (req, res) => {
-  const { id, action } = req.params;
-  console.log('Action: ', action.includes('un'));
-  const actions = ['like', 'bookmark'];
-
-  if (!actions.includes(action.toLowerCase()))
-    return res.status(400).json({ message: 'Invalid action' });
-
-  if (!mongoose.isValidObjectId(id))
+const toggleBookmarkLike = async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id))
     return res.status(400).json({ message: 'Invalid Post ID' });
 
-  const actionKey = action.toLowerCase() + 's';
+  const post = await Post.findById(req.params.id);
+  const user = await User.findById(req.id);
 
-  console.log('ActionKey: ', actionKey);
+  const actions = {
+    like: () => {
+      const likeIndex = post.likes.findIndex((like) => like.equals(req.id));
+      if (likeIndex === -1) {
+        post.likes.push(user.id);
+      } else {
+        post.likes.splice(likeIndex, 1);
+      }
+    },
+    bookmark: () => {
+      const bookmarkIndex = user.bookmarks.findIndex((bookmark) =>
+        bookmark.equals(req.params.id)
+      );
+      if (bookmarkIndex === -1) {
+        user.bookmarks.push(post.id);
+      } else {
+        user.bookmarks.splice(bookmarkIndex, 1);
+      }
+    },
+  };
 
-  const found = await Post.find({
-    _id: id,
-    actionKey: req.id,
-  });
-
-  let post;
-
-  try {
-    post = await Post.findByIdAndUpdate(
-      id,
-      found > 0
-        ? { $pull: { [actionKey]: req.id } }
-        : { $addToSet: { [actionKey]: req.id } },
-      { new: true, timestamps: false }
-    );
-  } catch (error) {
-    console.error(error.message);
-    return res.status(500).json({ message: 'Could not update post reaction' });
+  if (!actions[req.params.type]) {
+    return res.status(400).json({ error: 'Invalid request type' });
   }
 
-  if (!post) return res.status(204).json();
+  actions[req.params.type]();
 
-  actionKey === 'likes' && found > 0
-    ? await removeLikeNotification(req.id, id, post.author.toString())
-    : await likeNotification(req.id, id, post.author.toString());
+  try {
+    await Promise.all([post.save(), user.save()]);
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: `Could not update post ${req.params.type} reaction` });
+  }
 
-  res.status(200).json({ message: `${action} update sucessfully` });
+  res
+    .status(200)
+    .json({ message: `Post ${req.params.type} update successfully` });
 };
 
 module.exports = {
@@ -406,5 +410,5 @@ module.exports = {
   updatePost,
   deletePost,
   deleteUserData,
-  postActions,
+  toggleBookmarkLike,
 };

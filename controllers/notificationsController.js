@@ -45,11 +45,13 @@ const getUnreadNotifications = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch unread notifications' });
   }
 
-  res.status(200).json({
-    unreadNotifications: unreadNotifications.map((unreadNotification) =>
-      unreadNotification.toObject({ getters: true })
-    ),
-  });
+  res
+    .status(200)
+    .json(
+      unreadNotifications.map((unreadNotification) =>
+        unreadNotification.toObject({ getters: true })
+      )
+    );
 };
 
 const likeNotification = async (senderId, postId, receiverId) => {

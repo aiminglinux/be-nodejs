@@ -30,7 +30,7 @@ router
   .patch(verifyOwner, updateUser)
   .delete(verifyOwner, deleteUser);
 
-router.route('/:id/notifications').get(verifyOwner, getAllNotifications);
+router.route('/:id/notifications').get(getAllNotifications);
 
 router
   .route('/:id/notifications/unread')

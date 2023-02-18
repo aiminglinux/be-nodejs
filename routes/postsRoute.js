@@ -14,6 +14,7 @@ const {
   updatePost,
   deletePost,
   postActions,
+  toggleBookmarkLike,
 } = require('../controllers/postsController');
 
 router.route('/').get(getAllPosts);
@@ -27,7 +28,8 @@ router
   .delete(verifyJWT, deletePost)
   .patch(verifyJWT, updatePost);
 
-router.route('/:id/:action').patch(verifyJWT, postActions);
+// router.route('/:id/:action').patch(verifyJWT, postActions);
+router.route('/:id/:type').patch(verifyJWT, toggleBookmarkLike);
 router.route('/:postId/comments').get(getAllCommentsByPostId);
 
 module.exports = router;
