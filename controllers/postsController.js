@@ -370,13 +370,18 @@ const toggleBookmarkLike = async (req, res) => {
       }
     },
     bookmark: () => {
-      const bookmarkIndex = user.bookmarks.findIndex((bookmark) =>
-        bookmark.equals(req.params.id)
+      const userBookmarkIndex = user.bookmarks.findIndex((userBookmark) =>
+        userBookmark.equals(req.params.id)
       );
-      if (bookmarkIndex === -1) {
+      const postBookmarkIndex = post.bookmarks.findIndex((postBookmark) =>
+        postBookmark.equals(req.id)
+      );
+      if (userBookmarkIndex === -1 && postBookmarkIndex === -1) {
         user.bookmarks.push(post.id);
+        post.bookmarks.push(post.id);
       } else {
-        user.bookmarks.splice(bookmarkIndex, 1);
+        user.bookmarks.splice(userBookmarkIndex, 1);
+        post.bookmarks.splice(postBookmarkIndex, 1);
       }
     },
   };
@@ -388,7 +393,7 @@ const toggleBookmarkLike = async (req, res) => {
   actions[req.params.type]();
 
   try {
-    await Promise.all([post.save(), user.save()]);
+    await Promise.all([post.save({ timestamps: false }), user.save()]);
   } catch (error) {
     console.error(error.message);
     return res
