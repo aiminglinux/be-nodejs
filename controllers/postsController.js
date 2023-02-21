@@ -378,7 +378,7 @@ const toggleBookmarkLike = async (req, res) => {
       );
       if (userBookmarkIndex === -1 && postBookmarkIndex === -1) {
         user.bookmarks.push(post.id);
-        post.bookmarks.push(post.id);
+        post.bookmarks.push(req.id);
       } else {
         user.bookmarks.splice(userBookmarkIndex, 1);
         post.bookmarks.splice(postBookmarkIndex, 1);
