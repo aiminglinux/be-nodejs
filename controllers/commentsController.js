@@ -41,7 +41,7 @@ const getCommentByCommentId = async (req, res) => {
 const createComment = async (req, res) => {
   const { postId, commentId } = req.params;
 
-  console.log(req.params);
+  console.log(req.body);
 
   if (
     !mongoose.isValidObjectId(postId) ||
@@ -117,9 +117,11 @@ const updateComment = async (req, res) => {
   }
 
   if (!comment)
-    res.stutus(404).json({ message: 'Comment either deleted or not found' });
+    return res
+      .status(404)
+      .json({ message: 'Comment either deleted or not found' });
 
-  if (comment.author.toString() !== req.id)
+  if (comment?.author?.toString() !== req.id)
     return res
       .status(401)
       .json({ message: 'You do not have permission to modify this comment' });

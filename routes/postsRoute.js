@@ -17,8 +17,10 @@ const {
   toggleBookmarkLike,
 } = require('../controllers/postsController');
 
-router.route('/').get(getAllPosts);
-// .post([verifyJWT, uploadMiddleware], createPost);
+router
+  .route('/')
+  .get(getAllPosts)
+  .post([verifyJWT, uploadMiddleware], createPost);
 
 router.route('/bookmarked/:userId').get(getAllPosts);
 

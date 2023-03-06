@@ -95,6 +95,8 @@ const getUserDashboard = async (req, res) => {
 const updateUser = async (req, res) => {
   const id = req.params.id;
 
+  return console.log('Body: ', req.body);
+
   if (!mongoose.isValidObjectId(id))
     return res.status(400).json({ message: 'Invalid user ID' });
 
@@ -119,10 +121,7 @@ const updateUser = async (req, res) => {
 
   // Upload new avatar
   if (req.body.picture?.publicId !== process.env.CLOUDINARY_DEFAULT_PUBLIC_ID) {
-    const uploadResponse = await uploadToCloudinary(
-      req.body.picture?.url,
-      'pictures'
-    );
+    const uploadResponse = await uploadToCloudinary(req.body.file, 'pictures');
 
     const { url, public_id: publicId } = uploadResponse;
     req.body.picture = { url, publicId };
