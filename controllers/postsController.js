@@ -127,7 +127,7 @@ const getPostsByUserId = async (req, res) => {
 const createPost = async (req, res) => {
   const { title, body, tags } = req.body;
   const author = req.id;
-
+  return;
   if (req.file) {
     const { url, public_id: publicId } = await uploadToCloudinary(
       req.file.path,

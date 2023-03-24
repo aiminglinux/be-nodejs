@@ -3,6 +3,7 @@ const router = express.Router();
 
 const verifyJWT = require('../middleware/verifyJWT');
 const verifyOwner = require('../middleware/verifyOwner');
+const { uploadMiddleware } = require('../middleware/file-upload');
 
 const {
   getUserById,
@@ -27,7 +28,7 @@ router.route('/dash/:id').get(verifyOwner, getUserDashboard);
 
 router
   .route('/:id')
-  .patch(verifyOwner, updateUser)
+  .patch([verifyJWT, uploadMiddleware], updateUser)
   .delete(verifyOwner, deleteUser);
 
 router.route('/:id/notifications').get(getAllNotifications);

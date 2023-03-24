@@ -41,8 +41,6 @@ const uploadMiddleware = (req, res, next) => {
   }).single('file');
 
   singleUpload(req, res, function (err) {
-    console.log('you are here');
-
     if (err instanceof multer.MulterError) {
       res.status(500);
       next(err);

@@ -95,7 +95,8 @@ const getUserDashboard = async (req, res) => {
 const updateUser = async (req, res) => {
   const id = req.params.id;
 
-  return console.log('Body: ', req.body);
+  return console.log('file: ', req.file);
+  return console.log('patch: ', req.body);
 
   if (!mongoose.isValidObjectId(id))
     return res.status(400).json({ message: 'Invalid user ID' });

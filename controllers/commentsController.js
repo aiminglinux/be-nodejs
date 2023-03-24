@@ -29,9 +29,12 @@ const getCommentByCommentId = async (req, res) => {
     return res.status(500).json({ message: 'Could not fetch post' });
   }
 
-  if (!comment) return res.status(204).json();
+  if (!comment)
+    return res
+      .status(404)
+      .json({ message: 'Comment either deleted or not found' });
 
-  res.status(200).json({ comment: comment.toObject({ getters: true }) });
+  res.status(200).json(comment.toObject({ getters: true }));
 };
 
 // @desc: create Comment by ID
