@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Build docker image for dev-konnect') {
             steps {
-                sh 'kaniko/executor help'
+                sh 'kaniko help'
                 // sh 'docker push docker.io/freeman82/dev-konnect:v1.0.0'
             }
         }
