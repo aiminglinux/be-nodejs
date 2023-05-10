@@ -6,9 +6,7 @@ spec:
     - name: kaniko
       image: gcr.io/kaniko-project/executor:latest
       args:
-        - --dockerfile=Dockerfile
-        - --destination=docker.io/freeman82/dev-konnect
-        - --build-arg=VERSION=${BUILD_NUMBER}
+        - --no-build
       volumeMounts:
         - name: kaniko-secret
           mountPath: /kaniko/.docker
