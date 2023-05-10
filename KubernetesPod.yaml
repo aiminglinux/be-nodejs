@@ -4,7 +4,12 @@ metadata:
 spec:
   containers:
     - name: kaniko
-      image: gcr.io/kaniko-project/executor:latest
+      image: gcr.io/kaniko-project/executor:debug
+      args:
+        - /kaniko/executor
+        - --dockerfile=Dockerfile
+        - --destination=docker.io/freeman82/dev-konnect
+        - --build-arg=VERSION=${BUILD_NUMBER}
       volumeMounts:
         - name: kaniko-secret
           mountPath: /kaniko/.docker
