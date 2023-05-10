@@ -1,27 +1,14 @@
 pipeline {
     agent {
         kubernetes {
-            
-            yaml '''
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-  - name: shell
-    image: ubuntu
-    command:
-    - sleep
-    args:
-    - infinity
-'''
-            defaultContainer 'shell'
+            yamlFile 'KubernetesPod.yaml'
             namespace 'jenkins'
         }
     }
     stages {
-        stage('Main') {
+        stage('Build docker image for dev-konnect') {
             steps {
-                sh 'hostname'
+                sh 'sh 'kaniko --dockerfile=Dockerfile --destination=docker.io/freeman82/dev-konnect:${BUILD_NUMBER} --build-arg VERSION=${BUILD_NUMBER} .''
             }
         }
     }
