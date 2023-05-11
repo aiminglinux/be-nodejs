@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: devkonnect-be
+spec:
+  containers:
+    - name: devkonnect-be
+      image: freeman82/dev-konnect:41
+      ports:
+        - containerPort: 5000
+      volumeMounts:
+        - mountPath: /etc/devkonnect-sec
+          name: devkonnect-secret
+  volumes:
+    - name: devkonnect-secret
+      secret:
+        secretName: be-devkonnect
+  imagePullSecrets:
+    - name: dockerhub-creds
