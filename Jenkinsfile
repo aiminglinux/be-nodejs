@@ -8,6 +8,7 @@ pipeline {
             DOCKER_IMAGE_BACKEND = "freeman82/dev-konnect:be-devkonnect"
             DOCKER_IMAGE_FRONTEND = "freeman82/dev-konnect:fe-devkonnect"
         }
+    }    
     stages {
         stage('Build and push BE docker image for dev-konnect') {
             steps {
@@ -26,4 +27,5 @@ pipeline {
                 }
             }
         }
+    }    
 }
