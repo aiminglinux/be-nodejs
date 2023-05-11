@@ -15,7 +15,7 @@ pipeline {
         stage('Build and push BE docker image for dev-konnect') {
             steps {
                 container('kaniko') {
-                    sh '/kaniko/executor --context `pwd` --dockerfile `pwd`/Dockerfile --cache=true --cache-repo freeman82/dev-konnect --destination DOCKER_IMAGE_BACKEND'
+                    sh '/kaniko/executor --context `pwd` --dockerfile `pwd`/Dockerfile --cache=true --cache-repo freeman82/dev-konnect --destination $DOCKER_IMAGE_BACKEND'
                 }
             }
         }
@@ -25,7 +25,7 @@ pipeline {
                 	git url: 'https://github.com/aiminglinux/vite-tailwind-styled-components.git', branch: 'main', credentialsId: 'githib-creds'
                 }
                 container('kaniko') {
-                    sh '/kaniko/executor --context `pwd` --dockerfile `pwd`/Dockerfile --cache=true --cache-repo freeman82/dev-konnect --destination DOCKER_IMAGE_FRONTEND'
+                    sh '/kaniko/executor --context `pwd` --dockerfile `pwd`/Dockerfile --cache=true --cache-repo freeman82/dev-konnect --destination $DOCKER_IMAGE_FRONTEND'
                 }
             }
         }
