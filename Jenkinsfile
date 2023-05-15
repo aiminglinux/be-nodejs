@@ -22,11 +22,16 @@ pipeline {
                     remote.host = '172.16.1.100'
                     remote.allowAnyHosts = true
 
-                    withCredentials([sshUserPrivateKey(credentialsId: 'ansible-ssh-key', keyFileVariable: 'keyfile' , passphraseVariable: '', usernameVariable: 'user')]) {
+                    node {
+                        withCredentials([sshUserPrivateKey(credentialsId: 'ansible-ssh-key', keyFileVariable: 'keyfile' , passphraseVariable: '', usernameVariable: 'user')]) {
                         remote.user = user
                         remote.identityFile = keyfile
-                        sshCommand remote: remote, command: "hostname"
+                        stage('test') {
+                            sshCommand remote: remote, command: "hostname"
+                        } 
                     }
+                    }
+                    
                 }
             }
         } 
