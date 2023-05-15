@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3 
+  tasks: 
+  - name: Create k8s namespace
+    kubernetes.core.k8s:
+      name: testing
+      api_version: v1
+      kind: Namespace
+      state: present
