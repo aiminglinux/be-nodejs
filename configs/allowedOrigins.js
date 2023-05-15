@@ -6,6 +6,9 @@ const allowedOrigins = [
   'http://localhost:8080',
   'https://www.google.com.vn',
   'http://localhost:5000',
+  'http://devkonnect.com',
+  'http://api.devkonnect.com',
+  'http://localhost:4173',
 ];
 
 module.exports = allowedOrigins;

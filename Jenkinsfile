@@ -19,6 +19,13 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy backend service to k8s') {
+            steps {
+                sh 'kubectl apply -f be-devkonnect-deploy.yaml'
+            }
+        }
+
         stage('Build and push FE docker image for dev-konnect') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'githib-creds', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
@@ -27,6 +34,12 @@ pipeline {
                 container('kaniko') {
                     sh '/kaniko/executor --context `pwd` --dockerfile `pwd`/Dockerfile --cache=true --cache-repo freeman82/dev-konnect --destination $DOCKER_IMAGE_FRONTEND'
                 }
+            }
+        }
+
+        stage('Deploy frontend service to k8s') {
+            steps {
+                sh 'kubectl apply -f fe-devkonnect-deploy.yaml'
             }
         }
     }    

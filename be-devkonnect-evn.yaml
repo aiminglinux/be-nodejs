@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: devkonnect-be
+  name: dev-konnect
 spec:
   containers:
     - name: devkonnect-be
-      image: freeman82/dev-konnect:41
+      image: freeman82/dev-konnect:be-devkonnect
       ports:
         - containerPort: 5000
       env:
