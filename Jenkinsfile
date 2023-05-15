@@ -8,7 +8,6 @@ pipeline {
                     echo 'copy playbook file to ansible server'
                     sshagent(credentials: ['ansible-ssh-key']) {
                         sh 'scp -o StrictHostKeyChecking=no ansible/* freeman@172.16.1.100:/home/freeman/Documents/workspace/dev-konnect/'
-                        sh 'ansible --version'
                     }
                 }
             }
