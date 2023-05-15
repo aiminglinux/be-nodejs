@@ -22,7 +22,7 @@ pipeline {
 
         stage('Deploy backend service to k8s') {
             steps {
-                sh 'kubectl apply -f be-devkonnect-deploy.yaml'
+                kubernetesDeploy(configs: "be-devkonnect-deploy.yaml")
             }
         }
 
@@ -39,7 +39,7 @@ pipeline {
 
         stage('Deploy frontend service to k8s') {
             steps {
-                sh 'kubectl apply -f fe-devkonnect-deploy.yaml'
+                kubernetesDeploy(configs: "fe-devkonnect-deploy.yaml")
             }
         }
     }    
