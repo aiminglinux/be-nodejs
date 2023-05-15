@@ -13,5 +13,22 @@ pipeline {
                 }
             }
         }
+
+        stage('Execute ansible playbook') {
+            steps {
+                script {
+                    echo 'calling ansible playbook to create a testing namespace'
+                    def remote =[:]
+                    remote.name = 'ansible-server'
+                    remote.host = '172.16.1.100'
+                    remote.allowAnyHost = true
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ansible-ssh-key', keyFileVariable: 'keyfile', usernameVariable: 'user')]) {
+                        remote.user = user
+                        remote.identityFile = keyfile
+                        sshCommand remote: remote, command: 'ls -l'
+                    }
+                }
+            }
+        } 
     }    
 }
