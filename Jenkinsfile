@@ -38,7 +38,7 @@ pipeline {
                     sh 'git config --global user.name "Jenkins"'
                     sh "git add dev/be-devkonnect-deploy.yaml"
                     sh "git commit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
-                    sh "git push -u origin main"
+                    sh "git push"
                 }
             }
         }
