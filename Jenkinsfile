@@ -33,7 +33,7 @@ pipeline {
         }
         stage("Push to Git Repository") {
             steps {
-                withCredentials([(credentialsId: 'gitlab-token', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: 'gitlab-creds', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
                     sh "git add dev/be-devkonnect-deploy.yaml"
                     sh "git commit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
                     sh "git push https://$GITLAB_USERNAME:$GITLAB_PASSWORD@gitlab.com/aiming.fb/freeman-argocd.git"
