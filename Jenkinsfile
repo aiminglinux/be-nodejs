@@ -26,19 +26,19 @@ pipeline {
                 }
             }
         }
-        // stage('Update YAML file') {
-        //     steps {
-        //         sh 'sed -i "s/freeman82\\/dev-konnect:be-devkonnect/freeman82\\/dev-konnect:be-devkonnect-$BUILD_NUMBER/" dev/be-devkonnect-deploy.yaml'
-        //         sh "git add dev/be-devkonnect-deploy.yaml"
-        //         sh "git commmit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
-        //     }
-        // }
-        // stage("Push to Git Repository") {
-        //     steps {
-        //         withCredentials([file(credentialsId: 'gitlab-creds', variable: 'secretFile')]) {
-        //             sh "git push -u origin main"
-        //         }
-        //     }
-        // }
+        stage('Update YAML file') {
+            steps {
+                sh 'sed -i "s/freeman82\\/dev-konnect:be-devkonnect/freeman82\\/dev-konnect:be-devkonnect-$BUILD_NUMBER/" dev/be-devkonnect-deploy.yaml'
+                sh "git add dev/be-devkonnect-deploy.yaml"
+                sh "git commmit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
+            }
+        }
+        stage("Push to Git Repository") {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'gitlab-creds', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
+                    sh "git push -u origin main"
+                }
+            }
+        }
     }    
 }
