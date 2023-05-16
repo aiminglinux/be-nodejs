@@ -21,24 +21,21 @@ pipeline {
 
         stage('Checkout argocd repo') {
             steps {
-                git credentialsId: 'gitlab-creds', url: 'git@gitlab.com:aiming.fb/freeman-argocd.git'
+                git credentialsId: 'gitlab-creds', url: 'git@gitlab.com:aiming.fb/freeman-argocd.git', branch: 'main'
             }
         }
         stage('Update YAML file') {
             steps {
                 sh 'sed -i "s/freeman82\\/dev-konnect:be-devkonnect/freeman82\\/dev-konnect:be-devkonnect-$BUILD_NUMBER/" dev/be-devkonnect-deploy.yaml'
-                git add: 'dev/be-devkonnect-deploy.yaml'
+                sh "git add dev/be-devkonnect-deploy.yaml"
+                sh "git commmit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
             }
         }
-        stage('Commit and push changes') {
+        stage("Push to Git Repository") {
             steps {
-                git commit: "[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER", 
-                    credentialsId: 'gitlab-creds', 
-                    message: "[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER"
-                git push: [
-                    credentialsId: 'gitlab-creds', 
-                    tag: 'be-devkonnect-$BUILD_NUMBER'
-                ]
+                withCredentials([file(credentialsId: 'gitlab-creds', variable: 'secretFile')]) {
+                    sh "git push -u origin main"
+                }
             }
         }
     }    
