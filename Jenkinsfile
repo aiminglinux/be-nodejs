@@ -19,17 +19,17 @@ pipeline {
                     echo 'calling ansible playbook to create a testing namespace'
                     def remote =[:]
                     remote.name = 'ansible-server'
-                    remote.host = '172.16.1.100'
+                    remote.host = '172.16.0.116'
                     remote.allowAnyHosts = true
 
                     node {
-                        withCredentials([sshUserPrivateKey(credentialsId: 'ansible-ssh-key', keyFileVariable: 'keyfile' , passphraseVariable: '', usernameVariable: 'user')]) {
+                        withCredentials([sshUserPrivateKey(credentialsId: 'progra-ssh', keyFileVariable: 'keyfile' , passphraseVariable: '', usernameVariable: 'user')]) {
                         remote.user = user
                         remote.identityFile = keyfile
                         stage('test') {
                             sshCommand remote: remote, command: "hostname"
                         } 
-                    }
+                        }
                     }
                     
                 }
