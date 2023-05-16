@@ -36,6 +36,8 @@ pipeline {
         stage("Push to Git Repository") {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'gitlab-creds', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
+                    sh 'git config --global user.email "jenkins@example.com"'
+                    sh 'git config --global user.name "Jenkins"'
                     sh "git push -u origin main"
                 }
             }
