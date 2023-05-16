@@ -40,6 +40,6 @@ pipeline {
                     tag: 'be-devkonnect-$BUILD_NUMBER'
                 ]
             }
-
+        }
     }    
 }
