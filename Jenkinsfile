@@ -14,7 +14,7 @@ pipeline {
         stage('Build and push BE image for dev-konnect') {
             steps {
                 container('kaniko') {
-                    sh '/kaniko/executor --context `pwd` --dockerfile `pwd`/Dockerfile --cache=true --cache-repo freeman82/dev-konnect --destination $DOCKER_IMAGE_BACKEND:$BUILD_NUMBER'
+                    sh '/kaniko/executor --context `pwd` --dockerfile `pwd`/Dockerfile --cache=true --cache-repo freeman82/dev-konnect --destination $DOCKER_IMAGE_BACKEND-$BUILD_NUMBER'
                 }
             }
         }
