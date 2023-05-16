@@ -29,8 +29,6 @@ pipeline {
         stage('Update YAML file') {
             steps {
                 sh 'sed -i "s/freeman82\\/dev-konnect:be-devkonnect/freeman82\\/dev-konnect:be-devkonnect-$BUILD_NUMBER/" dev/be-devkonnect-deploy.yaml'
-                sh "git add dev/be-devkonnect-deploy.yaml"
-                sh "git commit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
             }
         }
         stage("Push to Git Repository") {
@@ -38,6 +36,8 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'gitlab-creds', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
                     sh 'git config --global user.email "jenkins@example.com"'
                     sh 'git config --global user.name "Jenkins"'
+                    sh "git add dev/be-devkonnect-deploy.yaml"
+                    sh "git commit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
                     sh "git push -u origin main"
                 }
             }
