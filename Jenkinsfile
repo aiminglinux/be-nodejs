@@ -30,7 +30,7 @@ pipeline {
             steps {
                 sh 'sed -i "s/freeman82\\/dev-konnect:be-devkonnect/freeman82\\/dev-konnect:be-devkonnect-$BUILD_NUMBER/" dev/be-devkonnect-deploy.yaml'
                 sh "git add dev/be-devkonnect-deploy.yaml"
-                sh "git commmit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
+                sh "git commit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
             }
         }
         stage("Push to Git Repository") {
