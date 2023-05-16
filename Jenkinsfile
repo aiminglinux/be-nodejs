@@ -21,14 +21,9 @@ pipeline {
 
         stage('Checkout argocd repo') {
             steps {
-                checkout([$class: 'GitSCM',
-                branches: [[name: '*/main' ]],
-                extensions: scm.extensions,
-                userRemoteConfigs: [[
-                    url: 'git@gitlab.com:aiming.fb/freeman-argocd.git',
-                    credentialsId: 'gitlab-creds'
-                ]]
-            ])
+                withCredentials([usernamePassword(credentialsId: 'gitlab-creds', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
+                    git url: 'https://gitlab.com/aiming.fb/freeman-argocd.git', branch: 'main', credentialsId: 'gitlab-creds'
+                }
             }
         }
         // stage('Update YAML file') {
