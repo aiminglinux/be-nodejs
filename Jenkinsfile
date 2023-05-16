@@ -21,7 +21,9 @@ pipeline {
 
         stage('Checkout argocd repo') {
             steps {
-                git credentialsId: 'gitlab-creds', url: 'git@gitlab.com:aiming.fb/freeman-argocd.git', branch: 'main'
+                withCredentials([file(credentialsId: 'gitlab-creds', variable: 'credsFile')]) {
+                    git url: 'git@gitlab.com:aiming.fb/freeman-argocd.git', branch: 'main'
+                }
             }
         }
         // stage('Update YAML file') {
