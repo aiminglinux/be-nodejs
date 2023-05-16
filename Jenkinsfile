@@ -1,14 +1,14 @@
 pipeline {
-    agent {
-        kubernetes {
-            namespace 'jenkins'
-            yamlFile 'KubernetesPod.yaml'
-        }     
-    }
-
-    environment {
-            DOCKER_IMAGE_BACKEND = "freeman82/dev-konnect:be-devkonnect"
-        }
+    // agent {
+    //     kubernetes {
+    //         namespace 'jenkins'
+    //         yamlFile 'KubernetesPod.yaml'
+    //     }     
+    // }
+    agent any
+    // environment {
+    //         DOCKER_IMAGE_BACKEND = "freeman82/dev-konnect:be-devkonnect"
+    //     }
 
     stages {
         // stage('Build and push BE image for dev-konnect') {
@@ -26,19 +26,19 @@ pipeline {
                 }
             }
         }
-        stage('Update YAML file') {
-            steps {
-                sh 'sed -i "s/freeman82\\/dev-konnect:be-devkonnect/freeman82\\/dev-konnect:be-devkonnect-$BUILD_NUMBER/" dev/be-devkonnect-deploy.yaml'
-                sh "git add dev/be-devkonnect-deploy.yaml"
-                sh "git commmit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
-            }
-        }
-        stage("Push to Git Repository") {
-            steps {
-                withCredentials([file(credentialsId: 'gitlab-creds', variable: 'secretFile')]) {
-                    sh "git push -u origin main"
-                }
-            }
-        }
+        // stage('Update YAML file') {
+        //     steps {
+        //         sh 'sed -i "s/freeman82\\/dev-konnect:be-devkonnect/freeman82\\/dev-konnect:be-devkonnect-$BUILD_NUMBER/" dev/be-devkonnect-deploy.yaml'
+        //         sh "git add dev/be-devkonnect-deploy.yaml"
+        //         sh "git commmit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
+        //     }
+        // }
+        // stage("Push to Git Repository") {
+        //     steps {
+        //         withCredentials([file(credentialsId: 'gitlab-creds', variable: 'secretFile')]) {
+        //             sh "git push -u origin main"
+        //         }
+        //     }
+        // }
     }    
 }
