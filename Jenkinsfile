@@ -21,9 +21,9 @@ pipeline {
 
         stage('Checkout argocd repo') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'gitlab-creds', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
-                    git url: 'https://gitlab.com/aiming.fb/freeman-argocd.git', branch: 'main', credentialsId: 'gitlab-creds'
-                }
+               
+                    git url: 'https://gitlab.com/aiming.fb/freeman-argocd.git', branch: 'main', credentialsId: 'gitlab-token'
+                
             }
         }
         stage('Update YAML file') {
@@ -33,13 +33,11 @@ pipeline {
         }
         stage("Push to Git Repository") {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'gitlab-creds', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
-                    sh 'git config --global user.email "jenkins@example.com"'
-                    sh 'git config --global user.name "Jenkins"'
-                    sh "git add dev/be-devkonnect-deploy.yaml"
-                    sh "git commit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
-                    sh "git push --set-upstream origin main"
-                }
+                
+                sh "git add dev/be-devkonnect-deploy.yaml"
+                sh "git commit -m '[Jenkins] Update image tag to be-devkonnect-$BUILD_NUMBER'"
+                sh "git push"
+                
             }
         }
     }    
