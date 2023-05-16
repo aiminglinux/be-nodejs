@@ -21,7 +21,7 @@ pipeline {
 
         stage('Checkout argocd repo') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'gilab-creds', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: 'gitlab-creds', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')]) {
                     git url: 'git@gitlab.com:aiming.fb/freeman-argocd.git', branch: 'main', credentialsId: 'gitlab-creds'
                 }
             }
