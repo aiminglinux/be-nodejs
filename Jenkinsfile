@@ -11,17 +11,19 @@ pipeline {
         }
 
     stages {
-        stage('Build and push BE image for dev-konnect') {
-            steps {
-                container('kaniko') {
-                    sh '/kaniko/executor --context `pwd` --dockerfile `pwd`/Dockerfile --cache=true --cache-repo freeman82/dev-konnect --destination $DOCKER_IMAGE_BACKEND-$BUILD_NUMBER'
-                }
-            }
-        }
+        // stage('Build and push BE image for dev-konnect') {
+        //     steps {
+        //         container('kaniko') {
+        //             sh '/kaniko/executor --context `pwd` --dockerfile `pwd`/Dockerfile --cache=true --cache-repo freeman82/dev-konnect --destination $DOCKER_IMAGE_BACKEND-$BUILD_NUMBER'
+        //         }
+        //     }
+        // }
 
         stage('Checkout argocd repo') {
             steps {
-                git credentialsId: 'gitlab-creds', url: 'git@gitlab.com:aiming.fb/freeman-argocd.git', branch: 'main'
+                withCredentials([file(credentialsId: 'gitlab-creds', variable: 'secretFile')]) {
+                    git credentialsId: 'gitlab-creds', url: 'git@gitlab.com:aiming.fb/freeman-argocd.git', branch: 'main'
+                }
             }
         }
         stage('Update YAML file') {
