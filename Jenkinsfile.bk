@@ -37,10 +37,5 @@ pipeline {
             }
         }
 
-        stage('Deploy frontend service to k8s') {
-            steps {
-                kubernetesDeploy(configs: "fe-devkonnect-deploy.yaml")
-            }
-        }
     }    
 }
