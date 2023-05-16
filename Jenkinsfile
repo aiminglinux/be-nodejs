@@ -22,7 +22,7 @@ pipeline {
         stage('Checkout argocd repo') {
             steps {
                 withCredentials([file(credentialsId: 'gitlab-creds', variable: 'credsFile')]) {
-                    git url: 'git@gitlab.com:aiming.fb/freeman-argocd.git', branch: 'main'
+                    git url: 'git@gitlab.com:aiming.fb/freeman-argocd.git', branch: 'main', credentialsId: 'gitlab-creds'
                 }
             }
         }
